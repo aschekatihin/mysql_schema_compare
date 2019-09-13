@@ -36,7 +36,7 @@ const optionDefinitions = [
 const helpSections = [
     {
         header: 'Synopsis',
-        content: '$ app <options> <.sql files>'
+        content: '$ mysql-schema-compare <options> <.sql files>'
     },
     {
         header: 'Database Options',
