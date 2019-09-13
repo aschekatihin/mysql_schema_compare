@@ -11,7 +11,7 @@
   },
   "author": "",
   "license": "MIT",
-  "repository": "aschekatihin/mysql_schema_comparator",
+  "repository": "aschekatihin/mysql_schema_compare",
   "keywords": [
     "mysql",
     "schema",
