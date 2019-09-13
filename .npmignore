@@ -1,0 +1,9 @@
+/.vscode
+/src
+/test
+/build/test
+
+*.ast
+*.script
+.env
+*.json

@@ -1,0 +1,50 @@
+{
+  "name": "mysql-schema-compare",
+  "version": "0.0.4",
+  "description": "",
+  "main": "./build/src/index.js",
+  "scripts": {
+    "test": "npm run build && mocha",
+    "build-grammar": "pegjs --plugin ./node_modules/ts-pegjs/src/tspegjs -o ./src/generated/pegjs-parser.ts ./src/grammar.pegjs",
+    "build": "npm run build-grammar && tsc && cp ./src/cli.js ./build/src/",
+    "start": "npm run build && node ./build/src/index.js"
+  },
+  "author": "",
+  "license": "MIT",
+  "repository": "aschekatihin/mysql_schema_comparator",
+  "keywords": [
+    "mysql",
+    "schema",
+    "compare"
+  ],
+  "bin": {
+    "mysql-schema-compare": "./build/src/cli.js"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.2.2",
+    "@types/chalk": "^2.2.0",
+    "@types/command-line-args": "^5.0.0",
+    "@types/command-line-usage": "^5.0.1",
+    "@types/dotenv": "^6.1.1",
+    "@types/lodash": "^4.14.138",
+    "@types/mocha": "^5.2.7",
+    "@types/mysql": "^2.15.7",
+    "@types/node": "^10.14.16",
+    "@types/node-sql-parser": "^1.0.0",
+    "chai": "^4.2.0",
+    "grammkit": "^0.7.0",
+    "mocha": "^6.2.0",
+    "pegjs": "^0.10.0",
+    "ts-pegjs": "^0.2.6",
+    "typescript": "^3.6.2"
+  },
+  "dependencies": {
+    "chalk": "^2.4.2",
+    "command-line-args": "^5.1.1",
+    "command-line-usage": "^6.0.2",
+    "dotenv": "^8.1.0",
+    "lodash": "^4.17.15",
+    "mysql": "^2.17.1",
+    "source-map-support": "^0.5.13"
+  }
+}

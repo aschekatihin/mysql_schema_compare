@@ -1,0 +1,26 @@
+{
+    "compilerOptions": {
+        "target": "es2017",
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "noImplicitThis": true,
+        "noImplicitAny": false,
+        "noImplicitReturns": true,
+        "typeRoots": ["node_modules/@types"],
+        "outDir": "build",
+        "inlineSourceMap": true,
+        "strictBindCallApply": true,
+        "strictNullChecks": false,
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
+        "incremental": false,
+        "composite": false
+    },
+    "include": [
+        "src/**/**.ts",
+        "test/**/**.ts"
+    ],
+    "exclude": [
+        "node_modules"
+    ]
+}

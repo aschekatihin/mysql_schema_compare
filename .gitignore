@@ -1,0 +1,9 @@
+build/
+node_modules/
+.vscode/
+
+log
+.env
+actual.ast
+expected.ast
+db.script
