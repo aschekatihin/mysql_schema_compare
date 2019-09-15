@@ -1,3 +1,4 @@
+// ---------- common functions ----------
 {
     function concatList(head, tail, skip) {
         var t;
@@ -13,6 +14,7 @@
         return (mods || []).reduce((map, val) => ({...map, ...val}), defaults);
     }
 }
+// ---------- common functions ----------
 
 start = head:statement tail:(whitespace* statement)* __ { return concatList(head, tail, 1); }
 
@@ -23,20 +25,24 @@ statement =
     / drop_statement
     / create_statement
     / alter_statement
+    / delimiter_statement { return { type: 'delimiter' }; }
     / whitespace* '--' '-'* [^\r\n]* { return {type: 'comment'}; }       // comment line
-    / whitespace* block_comment { return {type: 'comment'}; }
+    / whitespace* block_comment { return {type: 'comment'}; }            // block comment at statements level
 
 use_database = 
     whitespace* KW_USE __ name:ident_name __ EOS { return { type: 'use_database', name }; }
 
 drop_statement =
-    whitespace* KW_DROP __ target:drop_target (__ drop_condition)? __ name:ident_name __ EOS { return { type: 'drop_schema_item', target, name};}
+    whitespace* KW_DROP __ target:drop_target (__ drop_condition)? __ schema_name? name:ident_name __ EOS { return { type: 'drop_schema_item', target, name};}
 
 create_statement = 
-    whitespace* KW_CREATE __ sw:create_kinds __ EOS { return { type: 'create_schema_item', ...sw}; }
+    whitespace* KW_CREATE __ sw:create_kinds { return { type: 'create_schema_item', ...sw}; }
 
 alter_statement = 
     whitespace* KW_ALTER __ KW_TABLE __ name:ident_name __ alter_spec_list __ EOS { return { type: 'alter_schema_item', name}; }
+
+delimiter_statement =
+    KW_DELIMITER __ delimiter_types EOL
 
 // ---------- top level definitions ----------
 
@@ -47,6 +53,10 @@ alter_spec =
         ref_keys:ident_list __ KW_RBRACKET ref_actions:reference_action* __
 
 create_kinds = 
+    obj:create_database_table __ EOS { return obj; }
+    / obj:create_trigger_procedure __ program_end_mark { return obj; }
+
+create_database_table = 
     KW_DATABASE if_not_exists? __ name:ident_name __ KW_CHARACTER_SET __ KW_EQ_OPERATOR __ charset:ident_name __ 
         KW_COLLATE __ KW_EQ_OPERATOR __ collate:ident_name {
         return { 'schema_item': 'database', name, charset, collate };
@@ -54,6 +64,44 @@ create_kinds =
     / KW_TABLE if_not_exists? __ name:ident_name __ KW_LBRACKET __ definitions:create_definitions_list __ KW_RBRACKET options:create_table_options*  {
         return { 'schema_item': 'table', name, definitions, options: reduceModifiersArray(options) };
     }
+
+create_trigger_procedure = 
+    KW_TRIGGER __ name:ident_name __ time:trigger_time event:trigger_event __ KW_ON __ table_name:ident_name __ KW_FOR __ KW_EACH __ KW_ROW __
+        body:program_text_before_end __  {
+        return { schema_item: 'trigger', name, table_name, time: time[1].toUpperCase(), event: event[1].toUpperCase(), body: body.join('') };
+    }
+    / KW_PROCEDURE __ name:ident_name __ KW_LBRACKET __ procedure_parameters __ KW_RBRACKET __ body:program_text_before_end __ {
+        return { schema_item: 'procedure', name, body: body.join('') };
+    }
+
+procedure_parameters = head:procedure_parameter tail:(__ KW_COMMA __ procedure_parameter)* { return concatList(head, tail, 3); }
+
+procedure_parameter = 
+    proc_parameter_direction? __ name:ident_name __ type:data_types { return { name, type }; }
+
+proc_parameter_direction = 
+    KW_IN
+    / KW_OUT
+    / KW_INOUT
+
+delimiter_types = 
+    KW_SEMICOLON
+    / KW_ALT_DELIMITER
+
+trigger_time = 
+    __ KW_BEFORE
+    / __ KW_AFTER
+
+trigger_event = 
+    __ KW_INSERT
+    / __ KW_UPDATE
+    / __ KW_DELETE
+
+program_text_before_end = 
+    chr:(!program_end_mark .)* { return chr.map(i => i[1]); }
+
+program_end_mark =
+    KW_ALT_DELIMITER EOL
 
 if_not_exists = __ KW_IF __ KW_NOT __ KW_EXISTS
 
@@ -156,7 +204,8 @@ on_update_reference_action =
     __ KW_ON __ KW_UPDATE __ on_update_ref:reference_option { return on_update_ref; }
 
 data_types = 
-    type:KW_INT width:data_type_width? unsigned:(__ KW_UNSIGNED)? { return { type: type.toLowerCase(), is_unsigned: Boolean(unsigned), width } }
+    type:KW_INTEGER width:data_type_width? unsigned:(__ KW_UNSIGNED)? { return { type: type.toLowerCase(), is_unsigned: Boolean(unsigned), width } }
+    / type:KW_INT width:data_type_width? unsigned:(__ KW_UNSIGNED)? { return { type: type.toLowerCase(), is_unsigned: Boolean(unsigned), width } }
     / type:KW_TINYINT width:data_type_width? unsigned:(__ KW_UNSIGNED)? { return { type: type.toLowerCase(), is_unsigned: Boolean(unsigned), width } }
     / type:KW_VARCHAR width:data_type_width? mods:text_column_modifiers* { 
         return { 
@@ -197,7 +246,7 @@ default_value =
     KW_NULL { return { is_null: true, value: null }; }
     / value:([0-9]+) { return { is_null: false, value: value.join() }; }
     / KW_QUOTE_CHAR chars:[^\']* KW_QUOTE_CHAR { return {is_null: false, value: chars.join('') }; }
-    / KW_CURRENT_TIMESTAMP { return { is_null: false, value: 'CURRENT TIMESTAMP', is_current_timestamp: true }; }
+    / KW_CURRENT_TIMESTAMP { return { is_null: false, value:'CURRENT TIMESTAMP', is_current_timestamp: true }; }
 
 reference_option =
     KW_RESTRICT
@@ -219,11 +268,14 @@ drop_target =
 drop_condition = 
     KW_IF __ KW_EXISTS
 
+schema_name = 
+    name: ident_name '.' { return name; }
+
 ident_list = head:ident_name tail:(__ KW_COMMA __ ident_name)* { return concatList(head, tail, 1); }
 
 ident_name = 
-    head:ident_start tail:ident_part* { return head + tail.join(''); }
-    / '`' head:ident_start tail:ident_part* '`' { return head + tail.join(''); }
+    head:[A-Za-z0-9_] tail:[A-Za-z0-9$_-]* { return head + tail.join(''); }
+    / '`' head:[A-Za-z0-9_] tail:[A-Za-z0-9$_-]* '`' { return head + tail.join(''); }
 
 enum_list = 
     head:enum_entry tail:(__ KW_COMMA __ enum_entry)* { 
@@ -235,10 +287,11 @@ enum_entry =
     / '\'\''
     / KW_QUOTE_CHAR [A-Za-z]+ KW_QUOTE_CHAR
 
-ident_start = [A-Za-z0-9_]
-ident_part  = [A-Za-z0-9$_-]
+// ident_start = [A-Za-z0-9_]
+// ident_part  = [A-Za-z0-9$_-]
 
-EOS = KW_SEMICOLON EOL
+EOS = 
+    KW_SEMICOLON EOL
 
 newline = 
     '\n' 
@@ -247,18 +300,22 @@ EOL = newline / !.
 
 whitespace = [\t\n\r ]
 __ = (whitespace / comment)*
+
 comment = 
     block_comment
   / line_comment
 
-block_comment = "/*" (!"*/" char)* "*/"
-line_comment = "--" (!EOL char)*
+block_comment = "/*" (!"*/" .)* "*/"
+line_comment = "--" (!EOL .)*
 char = .
 // empty_line = EOL
 
 number = digits:([0-9]+) { return parseInt(digits.join('')); }
 
+// ---------- keywords and markup units ----------
+
 KW_SEMICOLON = ";"
+KW_ALT_DELIMITER = "$$";
 KW_EQ_OPERATOR = '=';
 KW_LBRACKET = '(';
 KW_RBRACKET = ')';
@@ -330,3 +387,17 @@ KW_CURRENT_TIMESTAMP = 'CURRENT_TIMESTAMP'i;
 KW_QUOTE_CHAR = '\'';
 KW_TRIGGER = 'TRIGGER'i;
 KW_PROCEDURE = 'PROCEDURE'i;
+KW_DELIMITER = 'DELIMITER'i;
+KW_BEFORE = 'BEFORE'i;
+KW_AFTER = 'AFTER'i;
+KW_INSERT = 'INSERT'i;
+KW_FOR = 'FOR'i;
+KW_EACH = 'EACH'i;
+KW_ROW = 'ROW'i;
+KW_BEGIN = 'BEGIN'i;
+KW_END = 'END';
+KW_IN = 'IN'i;
+KW_OUT = 'OUT'i;
+KW_INOUT = 'INOUT'i;
+KW_INTEGER = 'INTEGER'i;
+KW_ZEROFILL = 'ZEROFILL'i;

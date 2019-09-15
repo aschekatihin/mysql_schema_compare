@@ -3,14 +3,18 @@ export interface Hash<T> {
     [key: string]: T;
 }
 
+export interface CombinedParsingResult {
+    tables: ParsingResult;
+    triggers: ParsingResult;
+    procedures: ParsingResult;
+}
+
 export interface ParsingResult {
     asHash: Hash<SchemaItem>;
     asArray: SchemaItem[];
 }
 
 export interface SchemaItem {
-    parsingError: any | null;
-    successfullyParsed: boolean;
     createScript: string | null;
     itemName: string;
     ast: any;
@@ -18,7 +22,7 @@ export interface SchemaItem {
 }
 
 export type StatementType = 'drop_schema_item' | 'use_database' | 'create_schema_item' | 'alter_schema_item';
-export type SchemaItemType = 'table';
+export type SchemaItemType = 'table' | 'procedure' | 'trigger';
 
 export interface AstTableDefinition {
     name: string;

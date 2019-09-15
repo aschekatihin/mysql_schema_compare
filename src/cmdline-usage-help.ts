@@ -30,7 +30,12 @@ const optionDefinitions = [
         typeLabel: 'true/false',
         description: 'Treat items not described in definitions but present in database as error (default false)',
         group: 'proc'
-    }
+    },
+    // {
+    //     name: 'colors',
+    //     description: 'Disables colored output when present',
+    //     group: 'proc'
+    // }
 ];
 
 const helpSections = [

@@ -7,7 +7,8 @@ const optionsDefinitions = [
     { name: 'db-name', alias: 'n', type: String },
     { name: 'err-extra', type: Boolean },
     { name: 'schema', alias: 'd', type: String, multiple: true, defaultOption: true },
-    { name: 'help' }
+    { name: 'help' },
+    // { name: 'colors' }
 ];
 
 export default optionsDefinitions;

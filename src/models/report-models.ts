@@ -1,18 +1,15 @@
 
 export interface ComparisonReport {
-    tables: ReportTable[],
-    storedProcedures: any[],
-    triggers: any[];
-}
-
-export interface ReportTable extends ComparisonReportItem {
-    name: string,
-    actualAst: any | null;
-    expectedAst: any | null;
+    tables: ComparisonReportItem[];
+    storedProcedures: ComparisonReportItem[];
+    triggers: ComparisonReportItem[];
 }
 
 export interface ComparisonReportItem {
+    name: string;
     problems: Problem[];
+    actualAst: any | null;
+    expectedAst: any | null;
 }
 
 export interface Problem {

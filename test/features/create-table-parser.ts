@@ -3,7 +3,8 @@ require('source-map-support').install();
 import { describe, it } from 'mocha';
 import { should, expect } from 'chai';
 
-import {StringLoader} from '../../src/loaders/string-loader';
+import * as StringLoader from '../../src/loaders/string-loader';
+import { CombinedParsingResult } from '../../src/models/common-models';
 
 describe('create table statement', () => {
 
@@ -15,13 +16,19 @@ describe('create table statement', () => {
             );
             `;
 
-        const result = StringLoader.readStringSchemaDefinition(sql);
+        const result: CombinedParsingResult = { 
+            tables: { asArray: [], asHash: {} }, 
+            procedures: { asArray: [], asHash: {} }, 
+            triggers: { asArray: [], asHash: {} }
+        };
+
+        StringLoader.readStringSchemaDefinition(sql, result);
 
         expect(result).to.be.not.null;
-        expect(result.asArray).to.be.not.empty;
-        expect(result.asArray[0].ast).to.be.not.null.and.not.empty;
+        expect(result.tables.asArray).to.be.not.empty;
+        expect(result.tables.asArray[0].ast).to.be.not.null.and.not.empty;
 
-        const ast = result.asArray[0].ast;
+        const ast = result.tables.asArray[0].ast;
         expect(ast.definitions).to.be.not.null.and.not.empty;
 
         const intColumn = ast.definitions.find(i => i.name ==='intColumn');

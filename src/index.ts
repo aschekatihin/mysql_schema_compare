@@ -8,52 +8,50 @@ import * as commandLineUsage from 'command-line-usage';
 
 import { Config } from './config';
 import * as databaseVisitor from './visitors/database-visitor';
-import { ComparisonReport } from './models/report-models';
-import { DatabaseLoader } from './loaders/database-loader';
-import { FileLoader } from './loaders/file-loader';
+import { ComparisonReport, ComparisonReportItem } from './models/report-models';
+import * as DatabaseLoader from './loaders/database-loader';
+import * as FileLoader from './loaders/file-loader';
 import * as ErrorCodes from './error-codes';
 import helpSections from './cmdline-usage-help';
 
-const tablesIndent = '\t';
-const tablesSubIndent = '\t\t';
+const Indent1 = '\t';
+const Indent2 = '\t\t';
+
+const processLogPrefix = '»';
+const schemaItemTypePrefix = '°';
 
 async function main() {
-    const dbState = await DatabaseLoader.getParsedTableScripts();
+    console.log(processLogPrefix, 'Loading database schema...');
+    const dbState = await DatabaseLoader.getDatabaseSchema();
 
-    console.log('file', Config.schemaDefinitions[0]);
-    const fileState = await FileLoader.readDbSchemaDefinition(Config.schemaDefinitions[0]);
+    console.log(processLogPrefix, 'Loading file schemas...');
+    const expectedState = await FileLoader.getExpectedSchema(Config.schemaDefinitions);
 
     if (Config.debug.dump_asts) {
         const actual = util.inspect(dbState, { colors: false, compact: false, showHidden: false, depth: null });
-        const expected = util.inspect(fileState, { colors: false, compact: false, showHidden: false, depth: null });
+        const expected = util.inspect(expectedState, { colors: false, compact: false, showHidden: false, depth: null });
 
         await new Promise((resolve,reject) => fs.writeFile('actual.ast', actual, (err) => { if (err) reject(err); resolve(); }));
         await new Promise((resolve,reject) => fs.writeFile('expected.ast', expected, (err) => { if (err) reject(err); resolve(); }));
     }
 
-    const newReport: ComparisonReport = { tables: [], storedProcedures: [], triggers: []};
+    console.log(processLogPrefix, 'Comparing schemas...');
+
+    const newReport: ComparisonReport = { tables: [], storedProcedures: [], triggers: [] };
+    databaseVisitor.visit(newReport, dbState, expectedState);
+
+    console.log(processLogPrefix, 'Results:');
+
+    let totalDifferences = 0;
+    totalDifferences += displayReportSection(newReport.tables, 'Tables:');
+    totalDifferences += displayReportSection(newReport.triggers, 'Triggers:');
+    totalDifferences += displayReportSection(newReport.storedProcedures, 'Stored procedures:');
     
-    databaseVisitor.visit(newReport, dbState, fileState);
-
-    console.log('Compare results:');
-
-    console.log('° Tables:');
-    if (newReport.tables) {
-        for(const entry of newReport.tables.filter(i => i.problems.length > 0)) {
-            console.log();
-            console.log(tablesIndent, entry.name);
-
-            for(const promblm of entry.problems) {
-                console.log(tablesSubIndent, '·', promblm.problemType, ':', promblm.problemText);
-            }
-        }
-
-        const totalErrors = newReport.tables.reduce((acc, val) => acc + val.problems.length, 0);
-        console.log('Total errors:', totalErrors);
-
+    if (totalDifferences > 0) {
+        console.log('\n\n', 'Total differences:', totalDifferences);
         process.exit(ErrorCodes.SchemasDiffer);
     } else {
-        console.log(tablesIndent, chalk.default.green('Ok'));
+        console.log(Indent1, chalk.default.green('Schemas match.'));
     }
 }
 
@@ -73,8 +71,6 @@ function checkConfiguration() {
 }
 
 function displayHelpIfRequested() {
-    console.log(Config.general.help_requested);
-
     if (Config.general.help_requested) {
         const usage = commandLineUsage(helpSections)
         console.log(usage)
@@ -82,13 +78,48 @@ function displayHelpIfRequested() {
     }
 }
 
+function displayReportSection(section: ComparisonReportItem[], sectionName: string): number {
+    if (!section || section.length === 0) {
+        return 0;
+    }
+    
+    console.log(schemaItemTypePrefix, sectionName);
+
+    for(const entry of section.filter(i => i.problems.length > 0)) {
+        console.log('\n', Indent1, entry.name);
+
+        for(const promblm of entry.problems) {
+            let color = chalk.default.white;
+
+            switch(promblm.problemType) {
+                case "differs": 
+                    color = chalk.default.yellow;
+                    break;
+
+                case "missing":
+                    color = chalk.default.red;
+                    break;
+
+                // case "not expected":
+                //     color = chalk.default.magenta;
+                //     break;
+            }
+
+            console.log(Indent2, '·', color(promblm.problemType), ':', promblm.problemText);
+        }
+    }
+
+    console.log();
+
+    return section.reduce((acc, val) => acc + val.problems.length, 0);
+}
+
 displayHelpIfRequested();
 checkConfiguration();
 
-console.log('starting...');
+console.log(processLogPrefix, 'Starting...');
 main()
     .then(_ => {
-        console.log('done.');
         process.exit(ErrorCodes.Ok);
     })
     .catch(err => {

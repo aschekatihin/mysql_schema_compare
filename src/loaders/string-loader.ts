@@ -1,143 +1,158 @@
 import * as _ from 'lodash';
 
 import * as parser from '../generated/pegjs-parser';
-import { ParsingResult, SchemaItem } from "../models/common-models";
+import { ParsingResult, SchemaItem, CombinedParsingResult } from "../models/common-models";
 
-export class StringLoader {
 
-    public static readStringSchemaDefinition(definition: string): ParsingResult {
-        const ast = parser.parse(definition);
+function unifyTablePks(tableItem: SchemaItem) {
+    const pkColumns = tableItem.ast.definitions.filter(i => i.def_type === 'column' && i.is_pk);
+    const tablePk = tableItem.ast.definitions.find(i => i.def_type === 'primary_key');
+
+    if (!tablePk) {
+        tableItem.ast.definitions.push({def_type: 'primary_key', columns: [ ...pkColumns.map(i => ({ name: i.name, length: null, order: 'ASC' })) ] });
+    }
+}
+
+function addExplicitDefaultValuesIfNotSet(tableItem: SchemaItem): void {
+    const columns = tableItem.ast.definitions.filter(i => i.def_type === 'column' && i.nullable && !i.def_val);
+
+    if (columns) {
+        for(const item of columns) {
+            item.def_val = { "is_null": true, "value": null };;
+        }
+    }
+}
+
+function addExplicitWidthIfNotSet(tableItem: SchemaItem): void {
+    const columns = tableItem.ast.definitions.filter(i => i.def_type === 'column' && _.isNil(i.datatype.width));
+
+    if (columns) {
+        for(const column of columns) {
+            switch(column.datatype.type) {
+                case 'int':
+                    column.datatype.width = column.datatype.is_unsigned ? 10 : 11;
+                    break;
         
-        const result: { asArray: SchemaItem[], asHash: { [key: string]: SchemaItem }} = { asArray: [], asHash: {} };
-    
-        for(const item of ast) {
-            switch (item.type) {
-                case 'create_schema_item':
-                    if (item.schema_item !== 'table')
-                        continue;
-
-                    const tableItem = { 
-                        itemName: item.name, 
-                        ast: item, 
-                        schemaItemType: item.schema_item, 
-                        parsingError: null, 
-                        successfullyParsed: true, 
-                        createScript: null };
-
-                    StringLoader.unifyTablePks(tableItem);
-                    StringLoader.addExplicitDefaultValuesIfNotSet(tableItem);
-                    StringLoader.addExplicitWidthIfNotSet(tableItem);
-                    StringLoader.addKeyPartExplicitOrderIfNotSet(tableItem);
-                    StringLoader.addIndexForForeignKey(tableItem);
-
-                    result.asArray.push(tableItem);
-                    result.asHash[tableItem.itemName] = tableItem;
+                case 'tinyint':
+                    column.datatype.width = column.datatype.is_unsigned ? 3 : 4;
                     break;
-    
-                case 'alter_schema_item':
-                    // circular foreign keys are added as alter statement
+        
+                case 'bigint':
+                    column.datatype.width = column.datatype.is_unsigned ? 20 : 20;
                     break;
-    
-                default:
-                    // ignore
+        
+                case 'bool':
+                case 'boolean':
+                    column.datatype = { width: 1, type: 'tinyint', is_unsigned: false };
                     break;
             }
         }
-    
-        return result;
     }
+}
 
-    private static unifyTablePks(tableItem: SchemaItem) {
-        const pkColumns = tableItem.ast.definitions.filter(i => i.def_type === 'column' && i.is_pk);
-        const tablePk = tableItem.ast.definitions.find(i => i.def_type === 'primary_key');
+function addKeyPartExplicitOrderIfNotSet(tableItem: SchemaItem) {
+    const indexes = tableItem.ast.definitions.filter(i => i.def_type === 'primary_key' || 
+                                                            i.def_type === 'index' || 
+                                                            i.def_type === 'spatial_index' ||
+                                                            i.def_type === 'fulltext_index' || 
+                                                            i.def_type === 'unique_index');
 
-        if (!tablePk) {
-            tableItem.ast.definitions.push({def_type: 'primary_key', columns: [ ...pkColumns.map(i => ({ name: i.name, length: null, order: 'ASC' })) ] });
-        }
-    }
-
-    private static addExplicitDefaultValuesIfNotSet(tableItem: SchemaItem): void {
-        const columns = tableItem.ast.definitions.filter(i => i.def_type === 'column' && i.nullable && !i.def_val);
-
-        if (columns) {
-            for(const item of columns) {
-                item.def_val = { "is_null": true, "value": null };;
-            }
-        }
-    }
-
-    private static addExplicitWidthIfNotSet(tableItem: SchemaItem): void {
-        const columns = tableItem.ast.definitions.filter(i => i.def_type === 'column' && _.isNil(i.datatype.width));
-
-        if (columns) {
-            for(const column of columns) {
-                switch(column.datatype.type) {
-                    case 'int':
-                        column.datatype.width = column.datatype.is_unsigned ? 10 : 11;
-                        break;
-            
-                    case 'tinyint':
-                        column.datatype.width = column.datatype.is_unsigned ? 3 : 4;
-                        break;
-            
-                    case 'bigint':
-                        column.datatype.width = column.datatype.is_unsigned ? 21 : 22;
-                        break;
-            
-                    case 'bool':
-                    case 'boolean':
-                        column.datatype = { width: 1, type: 'tinyint', is_unsigned: false };
-                        break;
+    if (indexes) {
+        for(const index of indexes) {
+            for(const keyPart of index.columns) {
+                if (_.isNil(keyPart.order)) {
+                    keyPart.order = 'ASC'
                 }
             }
         }
     }
+}
 
-    private static addKeyPartExplicitOrderIfNotSet(tableItem: SchemaItem) {
-        const indexes = tableItem.ast.definitions.filter(i => i.def_type === 'primary_key' || 
-                                                                i.def_type === 'index' || 
-                                                                i.def_type === 'spatial_index' ||
-                                                                i.def_type === 'fulltext_index' || 
-                                                                i.def_type === 'unique_index');
+function addIndexForForeignKey(tableItem: SchemaItem) {
+    const foreignKeys = tableItem.ast.definitions.filter(i => i.def_type === 'foreign_key');
+    const indexes = tableItem.ast.definitions.filter(i => i.def_type === 'index' || i.def_type === 'unique_index');
 
-        if (indexes) {
-            for(const index of indexes) {
-                for(const keyPart of index.columns) {
-                    if (_.isNil(keyPart.order)) {
-                        keyPart.order = 'ASC'
-                    }
-                }
-            }
-        }
+    if (!foreignKeys) {
+        return;
     }
 
-    private static addIndexForForeignKey(tableItem: SchemaItem) {
-        const foreignKeys = tableItem.ast.definitions.filter(i => i.def_type === 'foreign_key');
-        const indexes = tableItem.ast.definitions.filter(i => i.def_type === 'index' || i.def_type === 'unique_index');
+    for(const item of foreignKeys) {
+        const keyColumns = item.ref_columns;
 
-        if (!foreignKeys) {
-            return;
+        const keyColumnsWithNoIndex = keyColumns.filter(i=> indexes.find(i => i.columns.find(c => c.name.localeCompare()) !== undefined) === undefined);
+
+        if (keyColumnsWithNoIndex.length > 0) {
+            const newFkIndex = { 
+                def_type: 'index',
+                name: 'FK_' + keyColumns.join('_'),
+                columns: [ ...keyColumnsWithNoIndex.map(i => ({ name: i, length: null, order: 'ASC'}))]
+            };
+
+            tableItem.ast.definitions.push(newFkIndex);
+        }
+    }
+}
+
+function columnPresentInAnyIndex(refColumn: string, indexes: any[]) {
+    const matchingIndex = indexes.find(i => i.columns.find(c => c.name.localeCompare(refColumn, undefined, { sensitivity: 'base' }) === 0) !== undefined);
+    return matchingIndex !== undefined;
+}
+
+const supportedSchemaItems: string[] = ['table', 'trigger', 'procedure'];
+
+
+export function readStringSchemaDefinition(definition: string, resultTransport: CombinedParsingResult): void {
+    const ast = parser.parse(definition);
+    
+    for(const item of ast) {
+        if (_.isNil(item['type'])) {
+            console.log('There is an item with item.type = null, skipping');
+            continue;
         }
 
-        for(const item of foreignKeys) {
-            const keyColumns = item.ref_columns;
+        switch (item.type) {
+            case 'create_schema_item':
+                if (supportedSchemaItems.indexOf(item.schema_item) === -1) {
+                    console.warn('Unsupported schema item', item.schema_item, 'encountered');
+                    continue;
+                }
 
-            const keyColumnsWithNoIndex = keyColumns.filter(i=> indexes.find(i => i.columns.find(c => c.name.localeCompare()) !== undefined) === undefined);
-
-            if (keyColumnsWithNoIndex.length > 0) {
-                const newFkIndex = { 
-                    def_type: 'index',
-                    name: 'FK_' + keyColumns.join('_'),
-                    columns: [ ...keyColumnsWithNoIndex.map(i => ({ name: i, length: null, order: 'ASC'}))]
+                const newItem = { 
+                    itemName: item.name, 
+                    ast: item, 
+                    schemaItemType: item.schema_item, 
+                    createScript: null
                 };
 
-                tableItem.ast.definitions.push(newFkIndex);
-            }
-        }
-    }
+                if (item.schema_item === 'table') {
+                    unifyTablePks(newItem);
+                    addExplicitDefaultValuesIfNotSet(newItem);
+                    addExplicitWidthIfNotSet(newItem);
+                    addKeyPartExplicitOrderIfNotSet(newItem);
+                    addIndexForForeignKey(newItem);
 
-    private static columnPresentInAnyIndex(refColumn: string, indexes: any[]) {
-        const matchingIndex = indexes.find(i => i.columns.find(c => c.name.localeCompare(refColumn, undefined, { sensitivity: 'base' }) === 0) !== undefined);
-        return matchingIndex !== undefined;
+                    resultTransport.tables.asArray.push(newItem);
+                    resultTransport.tables.asHash[newItem.itemName] = newItem;
+                } else if (item.schema_item === 'trigger') {
+                    resultTransport.triggers.asArray.push(newItem);
+                    resultTransport.triggers.asHash[newItem.itemName] = newItem;
+                } else if (item.schema_item === 'procedure') {
+                    resultTransport.procedures.asArray.push(newItem);
+                    resultTransport.procedures.asHash[newItem.itemName] = newItem;
+                }
+                break;
+
+            case 'alter_schema_item':
+                // circular foreign keys are added as alter statement
+                break;
+
+            case 'use_database':
+                // console.log('found', 'use_database', ', ignoring');
+                break;
+
+            default:
+                // ignore
+                break;
+        }
     }
 }

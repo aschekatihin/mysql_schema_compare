@@ -1,18 +1,24 @@
 import * as fs from 'fs';
 import * as util from 'util';
 
-import { ParsingResult, SchemaItem } from "../models/common-models";
-import { StringLoader } from './string-loader';
+import { ParsingResult, SchemaItem, CombinedParsingResult } from "../models/common-models";
+import * as StringLoader from './string-loader';
 
-export class FileLoader {
+export async function getExpectedSchema(files: string[]): Promise<CombinedParsingResult> {
+    const result: CombinedParsingResult = { 
+        tables: { asArray: [], asHash: {} }, 
+        procedures: { asArray: [], asHash: {} }, 
+        triggers: { asArray: [], asHash: {} }
+    };
 
-    public static async readDbSchemaDefinition(fileName: string): Promise<ParsingResult> {
-        // const readFilePromise = util.promisify(fs.readFile);
+    const readFilePromises = files.map(fileName => new Promise<string>((resolve, reject) => fs.readFile(fileName, 'utf8', 
+        (err, data) => { if (err) reject(err); resolve(data); })));
 
-        const data = await new Promise<string>((resolve, reject) => fs.readFile(fileName, 'utf8', 
-            (err, data) => { if (err) reject(err); resolve(data); }));
-    
-        return StringLoader.readStringSchemaDefinition(data);
+    const contents = await Promise.all(readFilePromises);
+
+    for(const item of contents) {
+        StringLoader.readStringSchemaDefinition(item, result);
     }
 
+    return result;
 }

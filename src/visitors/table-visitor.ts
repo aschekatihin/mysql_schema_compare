@@ -2,17 +2,17 @@ import * as _ from 'lodash';
 import * as chalk from 'chalk';
 
 import { AstTableDefinition } from '../models/common-models';
-import { ReportTable } from '../models/report-models';
+import { ComparisonReportItem } from '../models/report-models';
 import { Config } from '../config';
 import * as utils from '../utils';
 
-export function visit(report: ReportTable): void {
+export function visit(report: ComparisonReportItem): void {
     compareColumns(report);
     compareIndexes(report);
     compareForeignKeys(report);
 }
 
-function compareColumns(report: ReportTable) {
+function compareColumns(report: ComparisonReportItem) {
     const actualColumns = report.actualAst.definitions.filter(i => i.def_type === 'column');
     const expectedColumns = report.expectedAst.definitions.filter(i => i.def_type === 'column');
 
@@ -76,8 +76,7 @@ function compareColumns(report: ReportTable) {
     }
 }
 
-function compareIndexes(report: ReportTable) {
-    // const mapFunc = i => _.sortBy(i.columns, s => s.name).map(c => `${c.name}(${c.length})${c.order}`).join('-');
+function compareIndexes(report: ComparisonReportItem) {
     const keypartIndexFilter = i => i.def_type === 'unique_index' || 
                                     i.def_type === 'index' || 
                                     i.def_type === 'primary_key' || 
@@ -141,8 +140,7 @@ function compareForeignKeys(report) {
     const mapFunc = i => `${i.ref_table_name}-${i.ref_columns.join('-')}`;
     const actualFks: any[] = report.actualAst.definitions.filter(fkFilter).map(mapFunc);
     const expectedFks: any[] = report.expectedAst.definitions.filter(fkFilter).map(mapFunc);
-
-    
+   
 }
 
 function formatProblemText(column: string, what: string, expected: any, actual: any): string {
@@ -190,5 +188,3 @@ function detectDataTypeChanges(actual: any, expected: any): string[] {
 
     return result;
 }
-
-

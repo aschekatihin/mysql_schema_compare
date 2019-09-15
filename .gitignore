@@ -7,3 +7,6 @@ log
 actual.ast
 expected.ast
 db.script
+db.procedures.script
+db.tables.script
+db.triggers.script
