@@ -2,6 +2,7 @@ import * as _ from 'lodash';
 
 import * as parser from '../generated/pegjs-parser';
 import { ParsingResult, SchemaItem, CombinedParsingResult } from "../models/common-models";
+import { Config } from '../config';
 
 
 function unifyTablePks(tableItem: SchemaItem) {
@@ -44,6 +45,18 @@ function addExplicitWidthIfNotSet(tableItem: SchemaItem): void {
                 case 'bool':
                 case 'boolean':
                     column.datatype = { width: 1, type: 'tinyint', is_unsigned: false };
+                    break;
+
+                case 'bit':
+                    column.datatype.width = 1;
+                    break;
+                    
+                case 'smallint':
+                    column.datatype.width = column.datatype.is_unsigned ? 5 : 6;
+                    break;
+
+                case 'mediumint':
+                    column.datatype.width = column.datatype.is_unsigned ? 8 : 9;
                     break;
             }
         }
@@ -100,7 +113,6 @@ function columnPresentInAnyIndex(refColumn: string, indexes: any[]) {
 
 const supportedSchemaItems: string[] = ['table', 'trigger', 'procedure'];
 
-
 export function readStringSchemaDefinition(definition: string, resultTransport: CombinedParsingResult): void {
     const ast = parser.parse(definition);
     
@@ -113,7 +125,7 @@ export function readStringSchemaDefinition(definition: string, resultTransport: 
         switch (item.type) {
             case 'create_schema_item':
                 if (supportedSchemaItems.indexOf(item.schema_item) === -1) {
-                    console.warn('Unsupported schema item', item.schema_item, 'encountered');
+                    // console.warn('Unsupported schema item', item.schema_item, 'encountered');
                     continue;
                 }
 

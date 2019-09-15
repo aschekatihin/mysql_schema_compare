@@ -204,7 +204,7 @@ on_update_reference_action =
     __ KW_ON __ KW_UPDATE __ on_update_ref:reference_option { return on_update_ref; }
 
 data_types = 
-    type:KW_INTEGER width:data_type_width? unsigned:(__ KW_UNSIGNED)? { return { type: type.toLowerCase(), is_unsigned: Boolean(unsigned), width } }
+    type:KW_INTEGER width:data_type_width? unsigned:(__ KW_UNSIGNED)? { return { type: 'int', is_unsigned: Boolean(unsigned), width } }
     / type:KW_INT width:data_type_width? unsigned:(__ KW_UNSIGNED)? { return { type: type.toLowerCase(), is_unsigned: Boolean(unsigned), width } }
     / type:KW_TINYINT width:data_type_width? unsigned:(__ KW_UNSIGNED)? { return { type: type.toLowerCase(), is_unsigned: Boolean(unsigned), width } }
     / type:KW_VARCHAR width:data_type_width? mods:text_column_modifiers* { 
@@ -216,18 +216,23 @@ data_types =
     }
     / type:KW_TEXT width:data_type_width? mods:text_column_modifiers? { return { type: type.toLowerCase(), width } }
     / type:KW_CHAR width:data_type_width? mods:text_column_modifiers? { return { type: type.toLowerCase(), width } }
-    / type:KW_DECIMAL width: decimal_width? { return { type: type.toLowerCase(), ...width } }
+    / type:KW_DECIMAL width:decimal_width? unsigned:(__ KW_UNSIGNED)? { return { type: type.toLowerCase(), is_unsigned: Boolean(unsigned), ...width } }
+    / type:KW_DEC width:decimal_width? unsigned:(__ KW_UNSIGNED)? { return { type: 'decimal', is_unsigned: Boolean(unsigned), ...width } }
+    / type:KW_FIXED width: decimal_width? { return { type: 'decimal', ...width } }
     / type:KW_BOOLEAN { return { type: type.toLowerCase() } }
     / type:KW_BOOL { return { type: type.toLowerCase() } }
     / type:KW_TIMESTAMP { return { type: type.toLowerCase() } }
     / type:KW_DATETIME { return { type: type.toLowerCase() } }
-    / type:KW_FLOAT width: decimal_width? { return { type: type.toLowerCase(), ...width } }
+    / type:KW_FLOAT width: decimal_width? unsigned:(__ KW_UNSIGNED)? { return { type: type.toLowerCase(), is_unsigned: Boolean(unsigned), ...width } }
     / type:KW_BLOB width:data_type_width? { return { type: type.toLowerCase(), width } }
     / type:KW_ENUM __ KW_LBRACKET __ enum_list __ KW_RBRACKET mods:text_column_modifiers? { return { type: type.toLowerCase() } }
     / type:KW_BIGINT width: data_type_width? unsigned:(__ KW_UNSIGNED)? { return { type: type.toLowerCase(), is_unsigned: Boolean(unsigned), width } }
     / type:KW_POINT { return { type: type.toLowerCase() } }
     / type:KW_SMALLINT width:data_type_width? unsigned:(__ KW_UNSIGNED)? { return { type: type.toLowerCase(), is_unsigned: Boolean(unsigned), width } }
     / type:KW_MEDIUMTEXT width:data_type_width? mods:text_column_modifiers? { return { type: type.toLowerCase(), width } }
+    / type:KW_BIT width:data_type_width? { return { type: type.toLowerCase(), width } }
+    / type:KW_MEDIUMINT width:data_type_width? unsigned:(__ KW_UNSIGNED)? { return { type: type.toLowerCase(), is_unsigned: Boolean(unsigned), width } }
+    / type:KW_DOUBLE width: decimal_width? unsigned:(__ KW_UNSIGNED)? { return { type: type.toLowerCase(), is_unsigned: Boolean(unsigned), ...width } }
 
 data_type_width =
     __ KW_LBRACKET __ width:number __ KW_RBRACKET { return width; }
@@ -401,3 +406,8 @@ KW_OUT = 'OUT'i;
 KW_INOUT = 'INOUT'i;
 KW_INTEGER = 'INTEGER'i;
 KW_ZEROFILL = 'ZEROFILL'i;
+KW_BIT = 'BIT'i;
+KW_MEDIUMINT = 'MEDIUMINT'i;
+KW_DEC = 'DEC'i;
+KW_FIXED = 'FIXED'i;
+KW_DOUBLE = 'DOUBLE'i;

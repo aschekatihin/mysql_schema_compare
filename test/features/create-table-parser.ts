@@ -8,7 +8,7 @@ import { CombinedParsingResult } from '../../src/models/common-models';
 
 describe('create table statement', () => {
 
-    it('should parse data types', () => {
+    it('should parse column modifiers', () => {
         const sql = `
             CREATE TABLE Sample (
                 intColumn INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
@@ -34,6 +34,9 @@ describe('create table statement', () => {
         const intColumn = ast.definitions.find(i => i.name ==='intColumn');
         expect(intColumn).to.be.not.null;
         expect(intColumn.datatype).to.be.not.null;
+        expect(intColumn.auto_incr).to.be.true;
+        expect(intColumn.is_pk).to.be.true;
+        expect(intColumn.nullable).to.be.false;
     });
 
 });
