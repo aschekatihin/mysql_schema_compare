@@ -21,7 +21,10 @@ Mysql 5.x only atm.
 * Triggers
     * Whole body text compared
     * Body should be always enclosed in BEGIN ... END even if it is a single statement
-* Stored procedures (whole body text compared)
+    * Requires delimiter to be ```$$``` (hardcoded in parser).
+* Stored procedures
+    * Whole body text compared
+    * Requires delimiter to be ```$$``` (hardcoded in parser).
 
 
 
