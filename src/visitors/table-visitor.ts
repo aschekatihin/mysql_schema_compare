@@ -137,10 +137,31 @@ function compareIndexes(report: ComparisonReportItem) {
 
 function compareForeignKeys(report) {
     const fkFilter = i => i.def_type === 'foreign_key';
-    const mapFunc = i => `${i.ref_table_name}-${i.ref_columns.join('-')}`;
+    const mapFunc = i => ({ hash: `${i.ref_table_name.toUpperCase()}-${i.ref_columns.map(c => c.toUpperCase()).join('-')}`, original: i});
     const actualFks: any[] = report.actualAst.definitions.filter(fkFilter).map(mapFunc);
     const expectedFks: any[] = report.expectedAst.definitions.filter(fkFilter).map(mapFunc);
    
+    const idxNameComparison_ci = (fst, sec) => fst.hash.localeCompare(sec.hash, undefined, { sensitivity: 'base' }) === 0;
+    const extra = _.differenceWith(actualFks, expectedFks, idxNameComparison_ci);
+    const missing = _.differenceWith(expectedFks, actualFks, idxNameComparison_ci);
+
+    if (extra) {
+        for(const item of extra) {
+            report.problems.push({
+                problemText: `Foreign key for columns ${chalk.default.blue(item.original.ref_columns.join(','))} on table ${item.original.ref_table_name} (${item.original.ref_keys.join(',')}) is not expected`,
+                problemType: 'not expected'
+            });
+        }
+    }
+
+    if (missing) {
+        for(const item of missing) {
+            report.problems.push({
+                problemText: `Foreign key for columns ${chalk.default.blue(item.original.ref_columns.join(','))} on table ${item.original.ref_table_name} (${item.original.ref_keys.join(',')}) is expected but not present`,
+                problemType: 'missing'
+            });
+        }
+    }
 }
 
 function formatProblemText(column: string, what: string, expected: any, actual: any): string {

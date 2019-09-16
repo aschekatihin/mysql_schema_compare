@@ -132,7 +132,7 @@ column_additional_modifiers =
     / __ pk:KW_PRIMARY_KEY { return { is_pk: Boolean(pk)};}
     / __ nullable:column_nullability_spec { return { nullable: (nullable !== undefined && nullable !== null) ? nullable : true }; }
     / __ def_val:default_value_spec { return { def_val };}
-    / __ KW_COMMENT __ '\'' [^']* '\''
+    / __ KW_COMMENT __ '\'' text:[^']* '\'' { return { comment: text.join('') }; }
 
 index_definition = 
     index_or_key __ name:ident_name? __ KW_LBRACKET __ columns:key_part_list __ KW_RBRACKET __ { 

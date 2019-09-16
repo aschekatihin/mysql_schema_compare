@@ -83,7 +83,9 @@ function addKeyPartExplicitOrderIfNotSet(tableItem: SchemaItem) {
 
 function addIndexForForeignKey(tableItem: SchemaItem) {
     const foreignKeys = tableItem.ast.definitions.filter(i => i.def_type === 'foreign_key');
-    const indexes = tableItem.ast.definitions.filter(i => i.def_type === 'index' || i.def_type === 'unique_index');
+    const indexes = tableItem.ast.definitions.filter(i => i.def_type === 'index' ||
+                                                            i.def_type === 'unique_index' ||
+                                                            i.def_type === 'primary_key');
 
     if (!foreignKeys) {
         return;
@@ -118,11 +120,6 @@ function addIndexForForeignKey(tableItem: SchemaItem) {
         }
     }
 }
-
-// function columnPresentInAnyIndex(refColumn: string, indexes: any[]) {
-//     const matchingIndex = indexes.find(i => i.columns.find(c => c.name.localeCompare(refColumn, undefined, { sensitivity: 'base' }) === 0) !== undefined);
-//     return matchingIndex !== undefined;
-// }
 
 const supportedSchemaItems: string[] = ['table', 'trigger', 'procedure'];
 
