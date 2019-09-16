@@ -23,7 +23,6 @@ export const Config = {
                                         ? process.env['ERR_EXTRA'] 
                                         : false),
         quote_identifiers: false,
-        trace_ast: _.isNil(process.env['TRACE_AST']) === false ? process.env['TRACE_AST'] : false,
         ignore_collation: _.isNil(process.env['IGNORE_COLLATIONS']) === false ? process.env['IGNORE_COLLATION'] : true,
         compare_indexes_names: false,
         help_requested: options['help'] === null,

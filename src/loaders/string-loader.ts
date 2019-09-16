@@ -92,7 +92,20 @@ function addIndexForForeignKey(tableItem: SchemaItem) {
     for(const item of foreignKeys) {
         const keyColumns = item.ref_columns;
 
-        const keyColumnsWithNoIndex = keyColumns.filter(i=> indexes.find(i => i.columns.find(c => c.name.localeCompare()) !== undefined) === undefined);
+        // mysql reuses index only if FK's column is first in the list of index
+        const keyColumnsWithNoIndex = keyColumns.filter(fk => 
+            indexes.find(i => {
+                const matchingColumn = i.columns.find(c => c.name.localeCompare(fk, { sensitivity: 'base' }) === 0);
+
+                if (matchingColumn) {
+                    const index = i.columns.indexOf(matchingColumn);
+                    return index === 0;
+                } else {
+                    return false;
+                }
+            }
+            ) === undefined
+        );
 
         if (keyColumnsWithNoIndex.length > 0) {
             const newFkIndex = { 
@@ -106,10 +119,10 @@ function addIndexForForeignKey(tableItem: SchemaItem) {
     }
 }
 
-function columnPresentInAnyIndex(refColumn: string, indexes: any[]) {
-    const matchingIndex = indexes.find(i => i.columns.find(c => c.name.localeCompare(refColumn, undefined, { sensitivity: 'base' }) === 0) !== undefined);
-    return matchingIndex !== undefined;
-}
+// function columnPresentInAnyIndex(refColumn: string, indexes: any[]) {
+//     const matchingIndex = indexes.find(i => i.columns.find(c => c.name.localeCompare(refColumn, undefined, { sensitivity: 'base' }) === 0) !== undefined);
+//     return matchingIndex !== undefined;
+// }
 
 const supportedSchemaItems: string[] = ['table', 'trigger', 'procedure'];
 

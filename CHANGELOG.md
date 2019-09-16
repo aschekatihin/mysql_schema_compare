@@ -1,5 +1,7 @@
 
-
+## [0.0.6] /// 2019-09-16
+### Fixed
+- Fixed foreign keys auto index logic
 
 ## [0.0.5] /// 2019-09-16
 ### Added

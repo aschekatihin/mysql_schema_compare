@@ -61,7 +61,7 @@ const helpSections = [
             { name: 'DB_USER', summary: 'Corresponds to --db-user option' },
             { name: 'DB_PASS', summary: 'Corresponds to --db-pass option' },
             { name: 'DB_NAME', summary: 'Corresponds to --db-name option' },
-            { name: 'SCHEMA', summary: 'Comma separate list of .sql files' },
+            { name: 'SCHEMA', summary: 'Comma separated list of .sql files' },
             { name: 'ERR_EXTRA', summary: 'Corresponds to --err-extra option' }
         ]
     }
