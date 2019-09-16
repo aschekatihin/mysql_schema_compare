@@ -70,8 +70,8 @@ create_trigger_procedure =
         body:program_text_before_end __  {
         return { schema_item: 'trigger', name, table_name, time: time[1].toUpperCase(), event: event[1].toUpperCase(), body: body.join('') };
     }
-    / KW_PROCEDURE __ name:ident_name __ KW_LBRACKET __ procedure_parameters __ KW_RBRACKET __ body:program_text_before_end __ {
-        return { schema_item: 'procedure', name, body: body.join('') };
+    / KW_PROCEDURE __ name:ident_name __ KW_LBRACKET __ params:procedure_parameters __ KW_RBRACKET __ body:program_text_before_end __ {
+        return { schema_item: 'procedure', name, body: body.join(''), params };
     }
 
 procedure_parameters = head:procedure_parameter tail:(__ KW_COMMA __ procedure_parameter)* { return concatList(head, tail, 3); }

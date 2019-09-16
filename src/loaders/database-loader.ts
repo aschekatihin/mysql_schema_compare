@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import * as util from 'util';
 
 import mysqlPromise from "../mysql-promise";
 import { SchemaItem, ActualTriggerEntry, ActualStoredProcedure, CombinedParsingResult } from "../models/common-models";
@@ -47,7 +48,8 @@ async function parseTriggersScripts(resultTransport: CombinedParsingResult): Pro
     const actualScripts = await getTriggersCreateScripts();
 
     if (Config.debug.dump_database_script) {
-        await new Promise((resolve,reject) => fs.writeFile('db.triggers.script', actualScripts, (err) => { if (err) reject(err); resolve(); }));
+        const serialized = util.inspect(actualScripts, { colors: false, compact: false, showHidden: false, depth: null });
+        await new Promise((resolve,reject) => fs.writeFile('db.triggers.script', serialized, (err) => { if (err) reject(err); resolve(); }));
     }
 
     for(const item of actualScripts) {
@@ -84,7 +86,8 @@ async function parseStoredProceduresScripts(resultTransport: CombinedParsingResu
     const actualScripts = await getStoredProcedures();
 
     if (Config.debug.dump_database_script) {
-        await new Promise((resolve,reject) => fs.writeFile('db.procedures.script', actualScripts, (err) => { if (err) reject(err); resolve(); }));
+        const serialized = util.inspect(actualScripts, { colors: false, compact: false, showHidden: false, depth: null });
+        await new Promise((resolve,reject) => fs.writeFile('db.procedures.script', serialized, (err) => { if (err) reject(err); resolve(); }));
     }
 
     for(const item of actualScripts) {

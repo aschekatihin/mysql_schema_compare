@@ -26,6 +26,11 @@ Mysql 5.x only atm.
     * Whole body text compared
     * Requires delimiter to be ```$$``` (hardcoded in parser).
 
+Expected triggers and stored procedures bodies could contain comments. If they aren't present in target database they will be reported as differences. Make sure you import these objects to the db with ```--comments``` specified to preserve comments in target db.
+Like
+```
+mysql --host=localhost --port=3306 --user=root --password=root --database=db --comments < db-triggers.sql
+```
 
 
 # CLI
