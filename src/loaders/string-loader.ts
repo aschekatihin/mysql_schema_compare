@@ -1,9 +1,11 @@
 import * as _ from 'lodash';
+import * as util from 'util';
 
 import * as parser from '../generated/pegjs-parser';
 import { ParsingResult, SchemaItem, CombinedParsingResult } from "../models/common-models";
 import { Config } from '../config';
 
+const inspectSettings = { colors: false, compact: false, showHidden: false, depth: null };
 
 function unifyTablePks(tableItem: SchemaItem) {
     const pkColumns = tableItem.ast.definitions.filter(i => i.def_type === 'column' && i.is_pk);
@@ -121,6 +123,47 @@ function addIndexForForeignKey(tableItem: SchemaItem) {
     }
 }
 
+function applyAlterAddForeignKey(change, tableItem: SchemaItem) {
+    const newFk = {
+        def_type: 'foreign_key',
+        ref_columns: [
+            ...change.ref_columns
+        ],
+        ref_table_name: change.ref_table_name,
+        ref_keys: [
+            ...change.ref_keys
+        ],
+        ref_actions: [
+            ...change.ref_actions
+        ]
+      }
+
+    tableItem.ast.definitions.push(newFk);
+}
+
+function applyAlterTable(item, resultTransport: CombinedParsingResult) {
+    const tableName = item.name;
+    const matchingTable = resultTransport.tables.asHash[tableName];
+
+    if (!matchingTable) {
+        throw new Error(`Alter table \`${tableName}\` encountered but corresponding table not found`);
+    }
+
+    let addedFk = false;
+    for(const change of item.changes) {
+        switch(change['alt_type']) {
+            case 'add_foreign_key':
+                applyAlterAddForeignKey(change, matchingTable);
+                addedFk = true;
+                break;
+        }
+    }
+
+    if (addedFk) {
+        addIndexForForeignKey(matchingTable);
+    }
+}
+
 const supportedSchemaItems: string[] = ['table', 'trigger', 'procedure'];
 
 export function readStringSchemaDefinition(definition: string, resultTransport: CombinedParsingResult): void {
@@ -164,8 +207,10 @@ export function readStringSchemaDefinition(definition: string, resultTransport: 
                 }
                 break;
 
-            case 'alter_schema_item':
+            case 'alter_table':
                 // circular foreign keys are added as alter statement
+                // console.log('alter_table', util.inspect(item, inspectSettings));
+                applyAlterTable(item, resultTransport);
                 break;
 
             case 'use_database':

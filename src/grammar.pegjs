@@ -39,7 +39,7 @@ create_statement =
     whitespace* KW_CREATE __ sw:create_kinds { return { type: 'create_schema_item', ...sw}; }
 
 alter_statement = 
-    whitespace* KW_ALTER __ KW_TABLE __ name:ident_name __ alter_spec_list __ EOS { return { type: 'alter_schema_item', name}; }
+    whitespace* KW_ALTER __ KW_TABLE __ name:ident_name __ changes:alter_spec_list __ EOS { return { type: 'alter_table', name, changes }; }
 
 delimiter_statement =
     KW_DELIMITER __ delimiter_types EOL
@@ -49,8 +49,43 @@ delimiter_statement =
 alter_spec_list = head:alter_spec tail:(__ KW_COMMA __ alter_spec)* { return concatList(head, tail, 3); }
 
 alter_spec = 
-    KW_ADD __ KW_FOREIGN_KEY __ KW_LBRACKET __ ref_columns:ident_list __ KW_RBRACKET __ KW_REFERENCES __ ref_table_name:ident_name __ KW_LBRACKET __ 
-        ref_keys:ident_list __ KW_RBRACKET ref_actions:reference_action* __
+    operation_type:KW_ADD __ add_spec:alter_add_spec { return { operation_type, ...add_spec }; }
+    / operation_type:KW_ALTER __ (KW_COLUMN __)? name:ident_name __ spec:alter_column_spec { return { operation_type, name, ...spec }; }
+    / operation_type:KW_DROP __ spec:alter_drop_spec { return { operation_type, ...spec }; }
+    / KW_CHANGE (__ KW_COLUMN)? __ old_name:ident_name __ new_name:ident_name __ column_definition (__ KW_FIRST / (KW_AFTER after:index_name))?
+    / KW_FORCE { return { alt_type: 'force_rebuild' }; }
+    / KW_RENAME __ (__ (KW_TO / KW_AS))? new_table_name:ident_name { return { alt_type: 'rename_table', new_table_name }; }
+
+alter_add_spec = 
+    (KW_COLUMN __)? col_name:ident_name __ definition:column_definition (__ KW_FIRST / (KW_AFTER after:ident_name))? { return { alt_type: 'add_column', definition }; }
+    / (KW_COLUMN __)? __ KW_LBRACKET __ definitions:column_definitions __ KW_RBRACKET { return { alt_type: 'add_column', definitions }; }
+    / index_or_key name:(__ ident_name)? index_type:index_type? __ KW_LBRACKET __ key_parts:key_part_list __ KW_RBRACKET
+    / constraint_name? KW_FOREIGN_KEY name:(__ ident_name)? __ KW_LBRACKET __ ref_columns:ident_list __ KW_RBRACKET __ KW_REFERENCES __ ref_table_name:ident_name __ 
+        KW_LBRACKET __ ref_keys:ident_list __ KW_RBRACKET ref_actions:reference_action* __ {
+            return {
+                alt_type: 'add_foreign_key',
+                name: name? name[1] : null,
+                ref_columns,
+                ref_table_name,
+                ref_keys,
+                ref_actions
+            };
+        }
+
+alter_column_spec = 
+    KW_SET __ KW_DEFAULT (number / string)
+    / KW_DROP __ KW_DEFAULT
+
+alter_drop_spec =
+    (KW_COLUMN __)? name:ident_name { return { target: 'column', name }; }
+    / index_or_key name:ident_name { return { target: 'index', name }; }
+    / KW_PRIMARY_KEY { return { target: 'primary_key' }; }
+    / KW_FOREIGN_KEY name:ident_name { return { target: 'foreign_key', name }; }
+
+index_type =
+    KW_USING __ (KW_BTREE / KW_HASH)
+
+column_definitions = head:column_definition tail:(__ KW_COMMA __ column_definition)* { return concatList(head, tail, 3); }
 
 create_kinds = 
     obj:create_database_table __ EOS { return obj; }
@@ -198,10 +233,10 @@ reference_action =
     / on_update_reference_action
 
 on_delete_reference_action =
-    __ KW_ON __ KW_DELETE __ on_delete_ref:reference_option { return on_delete_ref; }
+    __ KW_ON __ KW_DELETE __ on_delete_ref:reference_option { return { event: 'on_delete', action: on_delete_ref.toUpperCase() }; }
 
 on_update_reference_action =
-    __ KW_ON __ KW_UPDATE __ on_update_ref:reference_option { return on_update_ref; }
+    __ KW_ON __ KW_UPDATE __ on_update_ref:reference_option { return { event: 'on_delete', action: on_update_ref.toUpperCase() }; }
 
 data_types = 
     type:KW_INTEGER width:data_type_width? unsigned:(__ KW_UNSIGNED)? { return { type: 'int', is_unsigned: Boolean(unsigned), width } }
@@ -254,11 +289,11 @@ default_value =
     / KW_CURRENT_TIMESTAMP { return { is_null: false, value:'CURRENT TIMESTAMP', is_current_timestamp: true }; }
 
 reference_option =
-    KW_RESTRICT
-    / KW_CASCADE
-    / KW_SET_NULL
-    / KW_NO_ACTION 
-    / KW_SET_DEFAULT
+    $KW_RESTRICT
+    / $KW_CASCADE
+    / $KW_SET_NULL
+    / $KW_NO_ACTION 
+    / $KW_SET_DEFAULT
 
 column_nullability_spec = 
     KW_NOT_NULL { return false; }
@@ -315,6 +350,7 @@ line_comment = "--" (!EOL .)*
 char = .
 // empty_line = EOL
 
+string = KW_QUOTE_CHAR [A-Za-z]+ KW_QUOTE_CHAR
 number = digits:([0-9]+) { return parseInt(digits.join('')); }
 
 // ---------- keywords and markup units ----------
@@ -411,3 +447,13 @@ KW_MEDIUMINT = 'MEDIUMINT'i;
 KW_DEC = 'DEC'i;
 KW_FIXED = 'FIXED'i;
 KW_DOUBLE = 'DOUBLE'i;
+KW_CHANGE = 'CHANGE'i;
+KW_COLUMN = 'COLUMN'i;
+KW_FIRST = 'FIRST'i;
+KW_FORCE = 'FORCE'i;
+KW_RENAME = 'RENAME'i;
+KW_TO = 'TO'i;
+KW_AS = 'AS'i;
+KW_USING = 'USING'i;
+KW_BTREE = 'BTREE'i;
+KW_HASH = 'HASH'i;
