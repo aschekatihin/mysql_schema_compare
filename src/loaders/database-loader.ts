@@ -111,7 +111,8 @@ export async function getDatabaseSchema(): Promise<CombinedParsingResult> {
     const result: CombinedParsingResult = { 
         tables: { asArray: [], asHash: {} }, 
         procedures: { asArray: [], asHash: {} }, 
-        triggers: { asArray: [], asHash: {} }
+        triggers: { asArray: [], asHash: {} },
+        functions: { asArray: [], asHash: {} }
     };
 
     await parseTableScripts(result);

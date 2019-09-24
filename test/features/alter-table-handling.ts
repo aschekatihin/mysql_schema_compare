@@ -24,7 +24,8 @@ describe('alter table statement', () => {
         const result: CombinedParsingResult = { 
             tables: { asArray: [], asHash: {} }, 
             procedures: { asArray: [], asHash: {} }, 
-            triggers: { asArray: [], asHash: {} }
+            triggers: { asArray: [], asHash: {} },
+            functions: { asArray: [], asHash: {} }
         };
 
         StringLoader.readStringSchemaDefinition(sql, result);

@@ -22,6 +22,11 @@ function visitProcedures(report: ComparisonReport, actual: ParsingResult, expect
     compareMatchingItems(report, actual, expected, report.storedProcedures, 'stored procedure', procedureVisitor.visit);
 }
 
+function visitFunctions(report: ComparisonReport, actual: ParsingResult, expected: ParsingResult): void {
+    detectMissingAndExtra(report, actual, expected, report.functions, 'Function');
+    compareMatchingItems(report, actual, expected, report.functions, 'function', procedureVisitor.visit);
+}
+
 function detectMissingAndExtra(report: ComparisonReport, actual: ParsingResult, expected: ParsingResult, reportTarget: ComparisonReportItem[], itemTypeText: string) {
     const extra = _.differenceWith(actual.asArray, expected.asArray, (fst, sec) => fst.itemName === sec.itemName);
     const missing = _.differenceWith(expected.asArray, actual.asArray, (fst, sec) => fst.itemName === sec.itemName);
@@ -91,4 +96,5 @@ export function visit(report: ComparisonReport, actual: CombinedParsingResult, e
     visitTables(report, actual.tables, expected.tables);
     visitTriggers(report, actual.triggers, expected.triggers);
     visitProcedures(report, actual.procedures, expected.procedures);
+    visitFunctions(report, actual.functions, expected.functions);
 }

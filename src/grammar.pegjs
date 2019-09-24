@@ -42,7 +42,7 @@ alter_statement =
     whitespace* KW_ALTER __ KW_TABLE __ name:ident_name __ changes:alter_spec_list __ EOS { return { type: 'alter_table', name, changes }; }
 
 delimiter_statement =
-    KW_DELIMITER __ delimiter_types EOL
+    KW_DELIMITER __ (KW_SEMICOLON / KW_ALT_DELIMITER) EOL
 
 // ---------- top level definitions ----------
 
@@ -89,7 +89,7 @@ column_definitions = head:column_definition tail:(__ KW_COMMA __ column_definiti
 
 create_kinds = 
     obj:create_database_table __ EOS { return obj; }
-    / obj:create_trigger_procedure __ program_end_mark { return obj; }
+    / obj:create_routine __ program_end_mark { return obj; }
 
 create_database_table = 
     KW_DATABASE if_not_exists? __ name:ident_name __ KW_CHARACTER_SET __ KW_EQ_OPERATOR __ charset:ident_name __ 
@@ -100,13 +100,16 @@ create_database_table =
         return { 'schema_item': 'table', name, definitions, options: reduceModifiersArray(options) };
     }
 
-create_trigger_procedure = 
+create_routine = 
     KW_TRIGGER __ name:ident_name __ time:trigger_time event:trigger_event __ KW_ON __ table_name:ident_name __ KW_FOR __ KW_EACH __ KW_ROW __
         body:program_text_before_end __  {
         return { schema_item: 'trigger', name, table_name, time: time[1].toUpperCase(), event: event[1].toUpperCase(), body: body.join('') };
     }
     / KW_PROCEDURE __ name:ident_name __ KW_LBRACKET __ params:procedure_parameters __ KW_RBRACKET __ body:program_text_before_end __ {
         return { schema_item: 'procedure', name, body: body.join(''), params };
+    }
+    / KW_FUNCTION __ name:ident_name __ KW_LBRACKET __ params:procedure_parameters __ KW_RBRACKET __ KW_RETURNS __ type:data_types __ body:program_text_before_end __ {
+        return { schema_item: 'function', name, body: body.join(''), params, returns: type };
     }
 
 procedure_parameters = head:procedure_parameter tail:(__ KW_COMMA __ procedure_parameter)* { return concatList(head, tail, 3); }
@@ -118,10 +121,6 @@ proc_parameter_direction =
     KW_IN
     / KW_OUT
     / KW_INOUT
-
-delimiter_types = 
-    KW_SEMICOLON
-    / KW_ALT_DELIMITER
 
 trigger_time = 
     __ KW_BEFORE
@@ -457,3 +456,6 @@ KW_AS = 'AS'i;
 KW_USING = 'USING'i;
 KW_BTREE = 'BTREE'i;
 KW_HASH = 'HASH'i;
+KW_FUNCTION = 'FUNCTION'i;
+KW_AGGREGATE = 'AGGREGATE'i;
+KW_RETURNS = 'RETURNS'i;

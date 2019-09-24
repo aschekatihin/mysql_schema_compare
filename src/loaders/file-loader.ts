@@ -8,7 +8,8 @@ export async function getExpectedSchema(files: string[]): Promise<CombinedParsin
     const result: CombinedParsingResult = { 
         tables: { asArray: [], asHash: {} }, 
         procedures: { asArray: [], asHash: {} }, 
-        triggers: { asArray: [], asHash: {} }
+        triggers: { asArray: [], asHash: {} },
+        functions: { asArray: [], asHash: {} }
     };
 
     const readFilePromises = files.map(fileName => new Promise<string>((resolve, reject) => fs.readFile(fileName, 'utf8', 

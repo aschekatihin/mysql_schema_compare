@@ -1,4 +1,8 @@
 
+## [0.0.9] /// 2019-09-25
+### Added
+- CREATE FUNCTION statement support added
+
 ## [0.0.8] /// 2019-09-17
 ### Added
 - ALTER TABLE statements initial support

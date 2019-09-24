@@ -7,6 +7,7 @@ export interface CombinedParsingResult {
     tables: ParsingResult;
     triggers: ParsingResult;
     procedures: ParsingResult;
+    functions: ParsingResult;
 }
 
 export interface ParsingResult {

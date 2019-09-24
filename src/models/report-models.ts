@@ -3,6 +3,7 @@ export interface ComparisonReport {
     tables: ComparisonReportItem[];
     storedProcedures: ComparisonReportItem[];
     triggers: ComparisonReportItem[];
+    functions: ComparisonReportItem[];
 }
 
 export interface ComparisonReportItem {

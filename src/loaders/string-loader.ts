@@ -164,7 +164,7 @@ function applyAlterTable(item, resultTransport: CombinedParsingResult) {
     }
 }
 
-const supportedSchemaItems: string[] = ['table', 'trigger', 'procedure'];
+const supportedSchemaItems: string[] = ['table', 'trigger', 'procedure', 'function'];
 
 export function readStringSchemaDefinition(definition: string, resultTransport: CombinedParsingResult): void {
     const ast = parser.parse(definition);
@@ -178,7 +178,6 @@ export function readStringSchemaDefinition(definition: string, resultTransport: 
         switch (item.type) {
             case 'create_schema_item':
                 if (supportedSchemaItems.indexOf(item.schema_item) === -1) {
-                    // console.warn('Unsupported schema item', item.schema_item, 'encountered');
                     continue;
                 }
 
@@ -204,6 +203,9 @@ export function readStringSchemaDefinition(definition: string, resultTransport: 
                 } else if (item.schema_item === 'procedure') {
                     resultTransport.procedures.asArray.push(newItem);
                     resultTransport.procedures.asHash[newItem.itemName] = newItem;
+                } else if (item.schema_item === 'function') {
+                    resultTransport.functions.asArray.push(newItem);
+                    resultTransport.functions.asHash[newItem.itemName] = newItem;
                 }
                 break;
 
