@@ -23,7 +23,7 @@ export interface SchemaItem {
 }
 
 export type StatementType = 'drop_schema_item' | 'use_database' | 'create_schema_item' | 'alter_schema_item';
-export type SchemaItemType = 'table' | 'procedure' | 'trigger';
+export type SchemaItemType = 'table' | 'procedure' | 'trigger' | string;
 
 export interface AstTableDefinition {
     name: string;

@@ -72,8 +72,8 @@ async function parseTriggersScripts(resultTransport: CombinedParsingResult): Pro
     }
 }
 
-async function getStoredProcedures(): Promise<ActualStoredProcedure[]> {
-    const procedures: any[] = await mysqlPromise('SELECT * FROM INFORMATION_SCHEMA.ROUTINES where routine_schema != ? and routine_type = ?;', ['sys', 'PROCEDURE']);
+async function getStoredProceduresAndFunctions(): Promise<ActualStoredProcedure[]> {
+    const procedures: any[] = await mysqlPromise('SELECT * FROM INFORMATION_SCHEMA.ROUTINES where routine_schema != ? and routine_type in (?);', ['sys', ['PROCEDURE', 'FUNCTION']]);
     return procedures.map(i => ({
         name: i['SPECIFIC_NAME'],
         type: i['ROUTINE_TYPE'],
@@ -83,7 +83,7 @@ async function getStoredProcedures(): Promise<ActualStoredProcedure[]> {
 }
 
 async function parseStoredProceduresScripts(resultTransport: CombinedParsingResult): Promise<void> {
-    const actualScripts = await getStoredProcedures();
+    const actualScripts = await getStoredProceduresAndFunctions();
 
     if (Config.debug.dump_database_script) {
         const serialized = util.inspect(actualScripts, { colors: false, compact: false, showHidden: false, depth: null });
@@ -91,19 +91,33 @@ async function parseStoredProceduresScripts(resultTransport: CombinedParsingResu
     }
 
     for(const item of actualScripts) {
+        const type = item.type.toLowerCase();
+
         const newItem: SchemaItem = { 
             itemName: item.name, 
             ast: {
-                schema_item: 'procedure',
+                schema_item: type,
                 name: item.name, 
                 body: item.definition
             }, 
-            schemaItemType: 'procedure', 
+            schemaItemType: type, 
             createScript: null
         };
 
-        resultTransport.procedures.asArray.push(newItem);
-        resultTransport.procedures.asHash[item.name] = newItem;
+        switch(type) {
+            case 'procedure':
+                resultTransport.procedures.asArray.push(newItem);
+                resultTransport.procedures.asHash[item.name] = newItem;
+                break;
+
+            case 'function':
+                resultTransport.functions.asArray.push(newItem);
+                resultTransport.functions.asHash[item.name] = newItem;
+                break;
+
+            default:
+                console.warn('Unsupported routine type ' + type);
+        }
     }
 }
 
