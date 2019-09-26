@@ -88,10 +88,11 @@ index_type =
 column_definitions = head:column_definition tail:(__ KW_COMMA __ column_definition)* { return concatList(head, tail, 3); }
 
 create_kinds = 
-    obj:create_database_table __ EOS { return obj; }
+    obj:create_database_table_view __ EOS { return obj; }
     / obj:create_routine __ program_end_mark { return obj; }
+    / obj:create_view __ view_end_mark { return obj; }
 
-create_database_table = 
+create_database_table_view = 
     KW_DATABASE if_not_exists? __ name:ident_name __ KW_CHARACTER_SET __ KW_EQ_OPERATOR __ charset:ident_name __ 
         KW_COLLATE __ KW_EQ_OPERATOR __ collate:ident_name {
         return { 'schema_item': 'database', name, charset, collate };
@@ -111,6 +112,16 @@ create_routine =
     / KW_FUNCTION __ name:ident_name __ KW_LBRACKET __ params:procedure_parameters __ KW_RBRACKET __ KW_RETURNS __ type:data_types __ body:program_text_before_end __ {
         return { schema_item: 'function', name, body: body.join(''), params, returns: type };
     }
+
+create_view = (KW_OR __ KW_REPLACE __)? (KW_ALGORITHM __ KW_EQ_OPERATOR __ view_algo __)? (KW_DEFINER __ KW_EQ_OPERATOR __ ident_name '@' (ident_name / '`%`') __)? 
+        (KW_SQL __ KW_SECURITY __ (KW_DEFINER / KW_INVOKER) __)? KW_VIEW __ name:ident_name __ KW_AS __ body:view_query_before_end __ {
+            return { 'schema_item': 'view', name, body };
+        }
+
+view_algo =
+    KW_UNDEFINED
+    / KW_MERGE
+    / KW_TEMPTABLE
 
 procedure_parameters = head:procedure_parameter tail:(__ KW_COMMA __ procedure_parameter)* { return concatList(head, tail, 3); }
 
@@ -136,6 +147,11 @@ program_text_before_end =
 
 program_end_mark =
     KW_ALT_DELIMITER EOL
+
+view_query_before_end = 
+    chr:(!view_end_mark .)* { return chr.map(i => i[1]); }
+
+view_end_mark = KW_SEMICOLON EOL
 
 if_not_exists = __ KW_IF __ KW_NOT __ KW_EXISTS
 
@@ -303,6 +319,7 @@ drop_target =
     / KW_TABLE
     / KW_TRIGGER
     / KW_PROCEDURE
+    / KW_FUNCTION
 
 drop_condition = 
     KW_IF __ KW_EXISTS
@@ -459,3 +476,14 @@ KW_HASH = 'HASH'i;
 KW_FUNCTION = 'FUNCTION'i;
 KW_AGGREGATE = 'AGGREGATE'i;
 KW_RETURNS = 'RETURNS'i;
+KW_VIEW = 'VIEW'i;
+KW_ALGORITHM = 'ALGORITHM'i;
+KW_UNDEFINED = 'UNDEFINED'i;
+KW_DEFINER = 'DEFINER'i;
+KW_OR = 'OR'i;
+KW_REPLACE = 'REPLACE'i;
+KW_MERGE = 'MERGE'i;
+KW_TEMPTABLE = 'TEMPTABLE'i;
+KW_SQL  = 'SQL'i;
+KW_SECURITY = 'SECURITY'i;
+KW_INVOKER = 'INVOKER'i;

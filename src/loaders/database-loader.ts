@@ -17,7 +17,7 @@ async function getTablesCreateScripts(): Promise<string> {
     const query = allTablesInDb.map(i => `show create table \`${i}\`;\n`).join('');
     const result = await mysqlPromise(query);
 
-    return result.map(i => i[0]['Create Table']).join(';\n') + ';';
+    return result.map(i => i[0]['Table'] ? i[0]['Create Table'] : i[0]['Create View']).join(';\n') + ';';
 }
 
 async function parseTableScripts(resultTransport: CombinedParsingResult): Promise<void> {
