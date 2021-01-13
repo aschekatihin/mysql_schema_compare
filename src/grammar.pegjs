@@ -330,8 +330,8 @@ schema_name =
 ident_list = head:ident_name tail:(__ KW_COMMA __ ident_name)* { return concatList(head, tail, 1); }
 
 ident_name = 
-    head:[A-Za-z0-9_] tail:[A-Za-z0-9$_-]* { return head + tail.join(''); }
-    / '`' head:[A-Za-z0-9_] tail:[A-Za-z0-9$_-]* '`' { return head + tail.join(''); }
+    head:[A-Za-z0-9_%~] tail:[A-Za-z0-9$_\-\%~]* { return head + tail.join(''); }
+    / '`' head:[A-Za-z0-9_%~] tail:[A-Za-z0-9$_\-\%~]* '`' { return head + tail.join(''); }
 
 enum_list = 
     head:enum_entry tail:(__ KW_COMMA __ enum_entry)* { 
