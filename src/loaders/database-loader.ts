@@ -6,6 +6,8 @@ import { SchemaItem, ActualTriggerEntry, ActualStoredProcedure, CombinedParsingR
 import * as StringLoader from "./string-loader";
 import { Config } from '../config';
 
+const writeFilePromise = util.promisify(fs.writeFile);
+
 async function getTablesNames(): Promise<string[]> {
     const tables: any[] = await mysqlPromise('SHOW tables;');
     return tables.map(item => item['Tables_in_nimbus']);
@@ -24,7 +26,7 @@ async function parseTableScripts(resultTransport: CombinedParsingResult): Promis
     const actualScripts = await getTablesCreateScripts();
 
     if (Config.debug.dump_database_script) {
-        await new Promise((resolve,reject) => fs.writeFile('db.tables.script', actualScripts, (err) => { if (err) reject(err); resolve(); }));
+        await writeFilePromise('db.tables.script', actualScripts, { encoding: 'utf8' });
     }
 
     StringLoader.readStringSchemaDefinition(actualScripts, resultTransport);
@@ -49,7 +51,7 @@ async function parseTriggersScripts(resultTransport: CombinedParsingResult): Pro
 
     if (Config.debug.dump_database_script) {
         const serialized = util.inspect(actualScripts, { colors: false, compact: false, showHidden: false, depth: null });
-        await new Promise((resolve,reject) => fs.writeFile('db.triggers.script', serialized, (err) => { if (err) reject(err); resolve(); }));
+        await writeFilePromise('db.triggers.script', serialized, { encoding: 'utf8' });
     }
 
     for(const item of actualScripts) {
@@ -87,7 +89,7 @@ async function parseStoredProceduresScripts(resultTransport: CombinedParsingResu
 
     if (Config.debug.dump_database_script) {
         const serialized = util.inspect(actualScripts, { colors: false, compact: false, showHidden: false, depth: null });
-        await new Promise((resolve,reject) => fs.writeFile('db.procedures.script', serialized, (err) => { if (err) reject(err); resolve(); }));
+        await writeFilePromise('db.procedures.script', serialized, { encoding: 'utf8' });
     }
 
     for(const item of actualScripts) {

@@ -4,6 +4,8 @@ import * as util from 'util';
 import { ParsingResult, SchemaItem, CombinedParsingResult } from "../models/common-models";
 import * as StringLoader from './string-loader';
 
+const readFilePromise = util.promisify(fs.readFile);
+
 export async function getExpectedSchema(files: string[]): Promise<CombinedParsingResult> {
     const result: CombinedParsingResult = { 
         tables: { asArray: [], asHash: {} }, 
@@ -12,8 +14,7 @@ export async function getExpectedSchema(files: string[]): Promise<CombinedParsin
         functions: { asArray: [], asHash: {} }
     };
 
-    const readFilePromises = files.map(fileName => new Promise<string>((resolve, reject) => fs.readFile(fileName, 'utf8', 
-        (err, data) => { if (err) reject(err); resolve(data); })));
+    const readFilePromises = files.map(fileName => readFilePromise(fileName, { encoding: 'utf8' }));
 
     const contents = await Promise.all(readFilePromises);
 

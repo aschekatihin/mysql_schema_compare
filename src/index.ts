@@ -20,6 +20,8 @@ const Indent2 = '\t\t';
 const processLogPrefix = '»';
 const schemaItemTypePrefix = '°';
 
+const writerFilePromise = util.promisify(fs.writeFile);
+
 async function main() {
     console.log(processLogPrefix, 'Loading database schema...');
     const dbState = await DatabaseLoader.getDatabaseSchema();
@@ -31,8 +33,8 @@ async function main() {
         const actual = util.inspect(dbState, { colors: false, compact: false, showHidden: false, depth: null });
         const expected = util.inspect(expectedState, { colors: false, compact: false, showHidden: false, depth: null });
 
-        await new Promise((resolve,reject) => fs.writeFile('actual.ast', actual, (err) => { if (err) reject(err); resolve(); }));
-        await new Promise((resolve,reject) => fs.writeFile('expected.ast', expected, (err) => { if (err) reject(err); resolve(); }));
+        await writerFilePromise('actual.ast', actual, { encoding: 'utf8' });
+        await writerFilePromise('expected.ast', expected, { encoding: 'utf8' });
     }
 
     console.log(processLogPrefix, 'Comparing schemas...');
