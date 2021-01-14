@@ -115,7 +115,7 @@ create_routine =
 
 create_view = (KW_OR __ KW_REPLACE __)? (KW_ALGORITHM __ KW_EQ_OPERATOR __ view_algo __)? (KW_DEFINER __ KW_EQ_OPERATOR __ ident_name '@' (ident_name / '`%`') __)? 
         (KW_SQL __ KW_SECURITY __ (KW_DEFINER / KW_INVOKER) __)? KW_VIEW __ name:ident_name __ KW_AS __ body:view_query_before_end __ {
-            return { 'schema_item': 'view', name, body };
+            return { 'schema_item': 'view', name, body: body.join('') };
         }
 
 view_algo =
