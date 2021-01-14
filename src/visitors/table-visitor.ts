@@ -4,7 +4,6 @@ import * as chalk from 'chalk';
 import { AstTableDefinition } from '../models/common-models';
 import { ComparisonReportItem } from '../models/report-models';
 import { Config } from '../config';
-import * as utils from '../utils';
 
 export function visit(report: ComparisonReportItem): void {
     compareColumns(report);
