@@ -32,7 +32,7 @@ function compareColumns(report: ComparisonReportItem) {
     if (missing) {
         for(const extraCol of missing) {
             report.problems.push({
-                problemText: `Column ${chalk.default.blue(extraCol.name)} is expected but not present`,
+                problemText: `Column ${chalk.blue(extraCol.name)} is expected but not present`,
                 problemType: 'missing'
             });
         }
@@ -45,7 +45,7 @@ function compareColumns(report: ComparisonReportItem) {
     for(const colName of matchingNames) {
         if (actualColumnsHash[colName].auto_incr !== expectedColumnsHash[colName].auto_incr) {
             report.problems.push({
-                problemText: `Column ${chalk.default.blue(colName)} AUTOINCREMENT flag doesn't matches. Expected: ${expectedColumnsHash[colName].auto_incr}, actual: ${actualColumnsHash[colName].auto_incr}`,
+                problemText: `Column ${chalk.blue(colName)} AUTOINCREMENT flag doesn't matches. Expected: ${expectedColumnsHash[colName].auto_incr}, actual: ${actualColumnsHash[colName].auto_incr}`,
                 problemType: 'differs'
             });
         }
@@ -94,7 +94,7 @@ function compareIndexes(report: ComparisonReportItem) {
     if (extra) {
         for(const extraIdx of extra) {
             report.problems.push({
-                problemText: `Index of type ${chalk.default.cyan(extraIdx.original.def_type)} (name: ${extraIdx.original.name}) consisting of columns ${chalk.default.cyan(extraIdx.original.columns.map(c => `${c.name}`).join(','))} is not expected`,
+                problemText: `Index of type ${chalk.cyan(extraIdx.original.def_type)} (name: ${extraIdx.original.name}) consisting of columns ${chalk.cyan(extraIdx.original.columns.map(c => `${c.name}`).join(','))} is not expected`,
                 problemType: 'not expected'
             });
         }
@@ -103,7 +103,7 @@ function compareIndexes(report: ComparisonReportItem) {
     if (missing) {
         for(const missingIdx of missing) {
             report.problems.push({
-                problemText: `Index of type ${missingIdx.original.def_type} (name: ${missingIdx.original.name}) consisting of columns ${chalk.default.cyan(missingIdx.original.columns.map(c => `${c.name}`).join(','))} is expected but not present`,
+                problemText: `Index of type ${missingIdx.original.def_type} (name: ${missingIdx.original.name}) consisting of columns ${chalk.cyan(missingIdx.original.columns.map(c => `${c.name}`).join(','))} is expected but not present`,
                 problemType: 'missing'
             });
         }
@@ -148,7 +148,7 @@ function compareForeignKeys(report) {
     if (extra) {
         for(const item of extra) {
             report.problems.push({
-                problemText: `Foreign key for columns ${chalk.default.blue(item.original.ref_columns.join(','))} on table ${item.original.ref_table_name} (${item.original.ref_keys.join(',')}) is not expected`,
+                problemText: `Foreign key for columns ${chalk.blue(item.original.ref_columns.join(','))} on table ${item.original.ref_table_name} (${item.original.ref_keys.join(',')}) is not expected`,
                 problemType: 'not expected'
             });
         }
@@ -157,7 +157,7 @@ function compareForeignKeys(report) {
     if (missing) {
         for(const item of missing) {
             report.problems.push({
-                problemText: `Foreign key for columns ${chalk.default.blue(item.original.ref_columns.join(','))} on table ${item.original.ref_table_name} (${item.original.ref_keys.join(',')}) is expected but not present`,
+                problemText: `Foreign key for columns ${chalk.blue(item.original.ref_columns.join(','))} on table ${item.original.ref_table_name} (${item.original.ref_keys.join(',')}) is expected but not present`,
                 problemType: 'missing'
             });
         }
@@ -165,7 +165,7 @@ function compareForeignKeys(report) {
 }
 
 function formatProblemText(column: string, what: string, expected: any, actual: any): string {
-    return `Column ${chalk.default.blue(column)} ${what} doesn't matches. Expected: ${expected}, actual: ${actual}`;
+    return `Column ${chalk.blue(column)} ${what} doesn't matches. Expected: ${expected}, actual: ${actual}`;
 }
 
 function isDefValueDiffers(actualDefValue: any, expectedDefValue: any): boolean {

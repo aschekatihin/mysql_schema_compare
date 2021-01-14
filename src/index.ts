@@ -55,7 +55,7 @@ async function main() {
         console.log('\n\n', 'Total differences:', totalDifferences);
         process.exit(ErrorCodes.SchemasDiffer);
     } else {
-        console.log(Indent1, chalk.default.green('Schemas match.'));
+        console.log(Indent1, chalk.green('Schemas match.'));
     }
 }
 
@@ -93,15 +93,15 @@ function displayReportSection(section: ComparisonReportItem[], sectionName: stri
         console.log('\n', Indent1, entry.name);
 
         for(const promblm of entry.problems) {
-            let color = chalk.default.white;
+            let color = chalk.white;
 
             switch(promblm.problemType) {
                 case "differs": 
-                    color = chalk.default.yellow;
+                    color = chalk.yellow;
                     break;
 
                 case "missing":
-                    color = chalk.default.red;
+                    color = chalk.red;
                     break;
 
                 // case "not expected":

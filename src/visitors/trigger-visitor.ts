@@ -21,21 +21,21 @@ export function visit(report: ComparisonReportItem): void {
 
     if (report.expectedAst.event !== report.actualAst.event) {
         report.problems.push({
-            problemText: `Trigger's ${chalk.default.cyan(report.name)} actual event ${report.actualAst.event} doesn't matches expected ${report.expectedAst.event}`,
+            problemText: `Trigger's ${chalk.cyan(report.name)} actual event ${report.actualAst.event} doesn't matches expected ${report.expectedAst.event}`,
             problemType: 'differs'
         });
     }
 
     if (report.expectedAst.table_name !== report.actualAst.table_name) {
         report.problems.push({
-            problemText: `Trigger's ${chalk.default.cyan(report.name)} actual event ${report.actualAst.table_name} doesn't matches expected ${report.expectedAst.table_name}`,
+            problemText: `Trigger's ${chalk.cyan(report.name)} actual event ${report.actualAst.table_name} doesn't matches expected ${report.expectedAst.table_name}`,
             problemType: 'differs'
         });
     }
 
     if (report.expectedAst.time !== report.expectedAst.time) {
         report.problems.push({
-            problemText: `Trigger's ${chalk.default.cyan(report.name)} actual event ${report.actualAst.time} doesn't matches expected ${report.expectedAst.time}`,
+            problemText: `Trigger's ${chalk.cyan(report.name)} actual event ${report.actualAst.time} doesn't matches expected ${report.expectedAst.time}`,
             problemType: 'differs'
         });
     }
