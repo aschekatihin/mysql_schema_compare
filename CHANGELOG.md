@@ -1,3 +1,9 @@
+## [0.0.11] /// 2021-01-14
+### Added
+- Views bodies are compared now
+- New env variable FULL_DIFFS
+- New env variable IGNORE_COMMENTS
+
 
 ## [0.0.9] /// 2019-09-25
 ### Added
