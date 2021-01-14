@@ -52,7 +52,7 @@ async function main() {
     totalDifferences += displayReportSection(newReport.views, 'Views:');
     
     if (totalDifferences > 0) {
-        console.log('\n\n', 'Total differences:', totalDifferences);
+        console.log('\n\n', 'Total differences:', totalDifferences, '\n\n');
         process.exit(ErrorCodes.SchemasDiffer);
     } else {
         console.log(Indent1, chalk.green('Schemas match.'));
@@ -127,6 +127,6 @@ main()
         process.exit(ErrorCodes.Ok);
     })
     .catch(err => {
-        console.log('err handler', err);
+        console.error('err handler', err);
         process.exit(ErrorCodes.Exception);
     });
