@@ -6,6 +6,7 @@ import { ParsingResult, CombinedParsingResult } from "../models/common-models";
 import * as tableVisitor from './table-visitor';
 import * as procedureVisitor from './stored-procedure-visitor';
 import * as triggerVisitor from './trigger-visitor';
+import * as viewVisitor from './view-visitor';
 
 function visitTables(report: ComparisonReport, actual: ParsingResult, expected: ParsingResult): void {
     detectMissingAndExtra(report, actual, expected, report.tables, 'Table');

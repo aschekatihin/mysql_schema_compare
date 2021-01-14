@@ -4,6 +4,7 @@ export interface ComparisonReport {
     storedProcedures: ComparisonReportItem[];
     triggers: ComparisonReportItem[];
     functions: ComparisonReportItem[];
+    views: ComparisonReportItem[];
 }
 
 export interface ComparisonReportItem {

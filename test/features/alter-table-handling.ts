@@ -25,7 +25,8 @@ describe('alter table statement', () => {
             tables: { asArray: [], asHash: {} }, 
             procedures: { asArray: [], asHash: {} }, 
             triggers: { asArray: [], asHash: {} },
-            functions: { asArray: [], asHash: {} }
+            functions: { asArray: [], asHash: {} },
+            views: { asArray: [], asHash: {} }
         };
 
         StringLoader.readStringSchemaDefinition(sql, result);

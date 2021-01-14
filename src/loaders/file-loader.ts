@@ -12,6 +12,8 @@ export async function getExpectedSchema(files: string[]): Promise<CombinedParsin
         procedures: { asArray: [], asHash: {} }, 
         triggers: { asArray: [], asHash: {} },
         functions: { asArray: [], asHash: {} }
+        functions: { asArray: [], asHash: {} },
+        views: { asArray: [], asHash: {} },
     };
 
     const readFilePromises = files.map(fileName => readFilePromise(fileName, { encoding: 'utf8' }));

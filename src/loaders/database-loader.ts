@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as util from 'util';
+import * as _ from 'lodash';
 
 import mysqlPromise from "../mysql-promise";
 import { SchemaItem, ActualTriggerEntry, ActualStoredProcedure, CombinedParsingResult } from "../models/common-models";
@@ -9,7 +10,7 @@ import { Config } from '../config';
 const writeFilePromise = util.promisify(fs.writeFile);
 
 async function getTablesNames(): Promise<string[]> {
-    const tables: any[] = await mysqlPromise('SHOW tables;');
+    const tables: any[] = await mysqlPromise('SHOW FULL tables where Table_type = \'BASE TABLE\';');
     return tables.map(item => item['Tables_in_nimbus']);
 }
 
@@ -19,7 +20,8 @@ async function getTablesCreateScripts(): Promise<string> {
     const query = allTablesInDb.map(i => `show create table \`${i}\`;\n`).join('');
     const result = await mysqlPromise(query);
 
-    return result.map(i => i[0]['Table'] ? i[0]['Create Table'] : i[0]['Create View']).join(';\n') + ';';
+    return result.map(i => _.isArray(i) ? i[0]['Create Table'] : i['Create Table'])
+                .join(';\n') + ';';
 }
 
 async function parseTableScripts(resultTransport: CombinedParsingResult): Promise<void> {
@@ -123,17 +125,46 @@ async function parseStoredProceduresScripts(resultTransport: CombinedParsingResu
     }
 }
 
+async function getViewNames(): Promise<string[]> {
+    const tables: any[] = await mysqlPromise('SHOW FULL tables where Table_type = \'VIEW\';');
+    return tables.map(item => item['Tables_in_nimbus']);
+}
+
+async function getViewsCreateScripts() {
+    const allTablesInDb = await getViewNames();
+
+    const query = allTablesInDb.map(i => `show create view \`${i}\`;\n`).join('');
+    const result = await mysqlPromise(query);
+
+    return result.map(i => _.isArray(i) ? i[0]['Create View'] : i['Create View'])
+                .join(';\n') + ';';
+}
+
+async function parseViewsScripts(resultTransport: CombinedParsingResult): Promise<void> {
+    const actualScripts = await getViewsCreateScripts();
+
+    if (Config.debug.dump_database_script) {
+        await writeFilePromise('db.views.script', actualScripts, { encoding: 'utf8' });
+    }
+
+    StringLoader.readStringSchemaDefinition(actualScripts, resultTransport);
+}
+
 export async function getDatabaseSchema(): Promise<CombinedParsingResult> {
     const result: CombinedParsingResult = { 
         tables: { asArray: [], asHash: {} }, 
         procedures: { asArray: [], asHash: {} }, 
         triggers: { asArray: [], asHash: {} },
-        functions: { asArray: [], asHash: {} }
+        functions: { asArray: [], asHash: {} },
+        views: { asArray: [], asHash: {} },
     };
 
-    await parseTableScripts(result);
-    await parseTriggersScripts(result);
-    await parseStoredProceduresScripts(result);
+    await Promise.all([
+        parseTableScripts(result),
+        parseTriggersScripts(result),
+        parseStoredProceduresScripts(result),
+        parseViewsScripts(result)
+    ]);
 
     return result;
 }

@@ -164,7 +164,7 @@ function applyAlterTable(item, resultTransport: CombinedParsingResult) {
     }
 }
 
-const supportedSchemaItems: string[] = ['table', 'trigger', 'procedure', 'function'];
+const supportedSchemaItems: string[] = ['table', 'trigger', 'procedure', 'function', 'view'];
 
 export function readStringSchemaDefinition(definition: string, resultTransport: CombinedParsingResult): void {
     const ast = parser.parse(definition);
@@ -206,6 +206,11 @@ export function readStringSchemaDefinition(definition: string, resultTransport: 
                 } else if (item.schema_item === 'function') {
                     resultTransport.functions.asArray.push(newItem);
                     resultTransport.functions.asHash[newItem.itemName] = newItem;
+                } else if (item.schema_item === 'view') {
+                    resultTransport.views.asArray.push(newItem);
+                    resultTransport.views.asHash[newItem.itemName] = newItem;
+                } else {
+                    console.log(chalk.red('Unhandled item', item.schema_item));
                 }
                 break;
 

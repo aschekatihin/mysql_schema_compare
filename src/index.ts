@@ -39,7 +39,7 @@ async function main() {
 
     console.log(processLogPrefix, 'Comparing schemas...');
 
-    const newReport: ComparisonReport = { tables: [], storedProcedures: [], triggers: [], functions: [] };
+    const newReport: ComparisonReport = { tables: [], procedures: [], triggers: [], functions: [], views: [] };
     databaseVisitor.visit(newReport, dbState, expectedState);
 
     console.log(processLogPrefix, 'Results:');
@@ -49,6 +49,7 @@ async function main() {
     totalDifferences += displayReportSection(newReport.triggers, 'Triggers:');
     totalDifferences += displayReportSection(newReport.storedProcedures, 'Stored procedures:');
     totalDifferences += displayReportSection(newReport.functions, 'Functions:');
+    totalDifferences += displayReportSection(newReport.views, 'Views:');
     
     if (totalDifferences > 0) {
         console.log('\n\n', 'Total differences:', totalDifferences);
