@@ -25,6 +25,8 @@ Mysql 5.x only atm.
 * Stored procedures
     * Whole body text compared
     * Requires delimiter to be ```$$``` (hardcoded in parser).
+* Views
+    * Whole body text compared
 
 Expected triggers and stored procedures bodies could contain comments. If they aren't present in target database they will be reported as differences. Make sure you import these objects to the db with ```--comments``` specified to preserve comments in target db.
 Like
@@ -64,8 +66,8 @@ mysql --host=localhost --port=3306 --user=root --password=root --database=db --c
 
 ## Same options are also configurable with environment variables or .env file
 
-| Env variable name | |
-|---|---|
+| Env variable name | Description | Default value |
+|---|---|---|
 | DB_HOST | Corresponds to _--db-host_ option |
 | DB_PORT | Corresponds to _--db-port_ option |
 | DB_USER | Corresponds to _--db-user_ option |
@@ -73,6 +75,8 @@ mysql --host=localhost --port=3306 --user=root --password=root --database=db --c
 | DB_NAME | Corresponds to _--db-name_ option |
 | SCHEMA  | Comma separate list of .sql files |
 | ERR_EXTRA | Corresponds to _--err-extra_ option |
+| FULL_DIFFS | Include full body text in difference view when true | false |
+| IGNORE_COMMENTS | Ignores one line comment changes then true | true |
 
 ## Error codes
 

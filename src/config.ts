@@ -26,7 +26,9 @@ export const Config = {
         ignore_collation: _.isNil(process.env['IGNORE_COLLATIONS']) === false ? process.env['IGNORE_COLLATION'] : true,
         compare_indexes_names: false,
         help_requested: options['help'] === null,
-        ignore_index_names: true
+        ignore_index_names: true,
+        full_diffs: _.isNil(process.env['FULL_DIFFS']) === false ? Boolean(process.env['FULL_DIFFS']) : false,
+        ignore_comments: _.isNil(process.env['IGNORE_COMMENTS']) === false ? Boolean(process.env['IGNORE_COMMENTS']) : true
     },
     debug: {
         dump_database_script: _.isNil(process.env['DUMP_DB_SCRIPT']) === false ? process.env['DUMP_DB_SCRIPT'] : false,
