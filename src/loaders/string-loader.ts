@@ -1,9 +1,9 @@
+import chalk = require('chalk');
 import * as _ from 'lodash';
 import * as util from 'util';
 
 import * as parser from '../generated/pegjs-parser';
 import { ParsingResult, SchemaItem, CombinedParsingResult } from "../models/common-models";
-import { Config } from '../config';
 
 const inspectSettings = { colors: false, compact: false, showHidden: false, depth: null };
 
@@ -136,7 +136,7 @@ function applyAlterAddForeignKey(change, tableItem: SchemaItem) {
         ref_actions: [
             ...change.ref_actions
         ]
-      }
+    }
 
     tableItem.ast.definitions.push(newFk);
 }
