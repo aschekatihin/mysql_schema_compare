@@ -1,7 +1,7 @@
 
 export interface ComparisonReport {
     tables: ComparisonReportItem[];
-    storedProcedures: ComparisonReportItem[];
+    procedures: ComparisonReportItem[];
     triggers: ComparisonReportItem[];
     functions: ComparisonReportItem[];
     views: ComparisonReportItem[];

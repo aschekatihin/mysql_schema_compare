@@ -1,4 +1,5 @@
 import * as _ from 'lodash';
+import * as pluralize from 'pluralize';
 
 import { Config } from '../config';
 import { ComparisonReport, ComparisonReportItem } from "../models/report-models";
@@ -8,24 +9,12 @@ import * as procedureVisitor from './stored-procedure-visitor';
 import * as triggerVisitor from './trigger-visitor';
 import * as viewVisitor from './view-visitor';
 
-function visitTables(report: ComparisonReport, actual: ParsingResult, expected: ParsingResult): void {
-    detectMissingAndExtra(report, actual, expected, report.tables, 'Table');
-    compareMatchingItems(report, actual, expected, report.tables, 'table', tableVisitor.visit);
-}
+function visitSchemaItem(report: ComparisonReport, actual: CombinedParsingResult, expected: CombinedParsingResult, 
+    itemVisitor: (report: ComparisonReportItem) => void, schemaItemName: 'table'|'trigger'|'procedure'|'function'|'view'): void {
 
-function visitTriggers(report: ComparisonReport, actual: ParsingResult, expected: ParsingResult): void {
-    detectMissingAndExtra(report, actual, expected, report.triggers, 'Trigger');
-    compareMatchingItems(report, actual, expected, report.triggers, 'trigger', triggerVisitor.visit);
-}
-
-function visitProcedures(report: ComparisonReport, actual: ParsingResult, expected: ParsingResult): void {
-    detectMissingAndExtra(report, actual, expected, report.storedProcedures, 'Stored procedure');
-    compareMatchingItems(report, actual, expected, report.storedProcedures, 'stored procedure', procedureVisitor.visit);
-}
-
-function visitFunctions(report: ComparisonReport, actual: ParsingResult, expected: ParsingResult): void {
-    detectMissingAndExtra(report, actual, expected, report.functions, 'Function');
-    compareMatchingItems(report, actual, expected, report.functions, 'function', procedureVisitor.visit);
+    const plural = pluralize(schemaItemName);
+    detectMissingAndExtra(report, actual[plural], expected[plural], report[plural], schemaItemName);
+    compareMatchingItems(report, actual[plural], expected[plural], report[plural], schemaItemName, itemVisitor);
 }
 
 function detectMissingAndExtra(report: ComparisonReport, actual: ParsingResult, expected: ParsingResult, reportTarget: ComparisonReportItem[], itemTypeText: string) {
@@ -40,7 +29,7 @@ function detectMissingAndExtra(report: ComparisonReport, actual: ParsingResult, 
                 expectedAst: null,
                 problems: [
                     {
-                        problemText: itemTypeText + ' is present but not expected',
+                        problemText: _.capitalize(itemTypeText) + ' is present but not expected',
                         problemType: 'not expected'
                     }
                 ]
@@ -58,7 +47,7 @@ function detectMissingAndExtra(report: ComparisonReport, actual: ParsingResult, 
                 expectedAst: item.ast,
                 problems: [
                     {
-                        problemText: itemTypeText + ' is not present',
+                        problemText: _.capitalize(itemTypeText) + ' is not present',
                         problemType: 'missing'
                     }
                 ]
@@ -94,8 +83,9 @@ function compareMatchingItems(report: ComparisonReport, actual: ParsingResult, e
 }
 
 export function visit(report: ComparisonReport, actual: CombinedParsingResult, expected: CombinedParsingResult): void {
-    visitTables(report, actual.tables, expected.tables);
-    visitTriggers(report, actual.triggers, expected.triggers);
-    visitProcedures(report, actual.procedures, expected.procedures);
-    visitFunctions(report, actual.functions, expected.functions);
+    visitSchemaItem(report, actual, expected, tableVisitor.visit, 'table');
+    visitSchemaItem(report, actual, expected, triggerVisitor.visit, 'trigger');
+    visitSchemaItem(report, actual, expected, procedureVisitor.visit, 'procedure');
+    visitSchemaItem(report, actual, expected, procedureVisitor.visit, 'function');
+    visitSchemaItem(report, actual, expected, viewVisitor.visit, 'view');
 }

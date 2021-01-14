@@ -47,7 +47,7 @@ async function main() {
     let totalDifferences = 0;
     totalDifferences += displayReportSection(newReport.tables, 'Tables:');
     totalDifferences += displayReportSection(newReport.triggers, 'Triggers:');
-    totalDifferences += displayReportSection(newReport.storedProcedures, 'Stored procedures:');
+    totalDifferences += displayReportSection(newReport.procedures, 'Stored procedures:');
     totalDifferences += displayReportSection(newReport.functions, 'Functions:');
     totalDifferences += displayReportSection(newReport.views, 'Views:');
     
