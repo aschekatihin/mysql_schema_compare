@@ -202,7 +202,8 @@ index_definition =
                 ref_actions: ref_actions
             };
         }
-    / constraint_name? KW_PRIMARY_KEY __ KW_LBRACKET __ columns:key_part_list __ KW_RBRACKET __ {
+    /*  KW_PRIMARY_KEY __ name:ident_name? is not up to mysql 5 spec, but it allows it */
+    / constraint_name? KW_PRIMARY_KEY __ name:ident_name? __ KW_LBRACKET __ columns:key_part_list __ KW_RBRACKET __ {
         return {
                 'def_type': 'primary_key',
                 columns
@@ -272,7 +273,7 @@ data_types =
     / type:KW_BOOLEAN { return { type: type.toLowerCase() } }
     / type:KW_BOOL { return { type: type.toLowerCase() } }
     / type:KW_TIMESTAMP { return { type: type.toLowerCase() } }
-    / type:KW_DATETIME { return { type: type.toLowerCase() } }
+    / type:KW_DATETIME width: data_type_width? { return { type: type.toLowerCase(), width } }
     / type:KW_FLOAT width: decimal_width? unsigned:(__ KW_UNSIGNED)? { return { type: type.toLowerCase(), is_unsigned: Boolean(unsigned), ...width } }
     / type:KW_BLOB width:data_type_width? { return { type: type.toLowerCase(), width } }
     / type:KW_ENUM __ KW_LBRACKET __ enum_list __ KW_RBRACKET mods:text_column_modifiers? { return { type: type.toLowerCase() } }
@@ -283,6 +284,7 @@ data_types =
     / type:KW_BIT width:data_type_width? { return { type: type.toLowerCase(), width } }
     / type:KW_MEDIUMINT width:data_type_width? unsigned:(__ KW_UNSIGNED)? { return { type: type.toLowerCase(), is_unsigned: Boolean(unsigned), width } }
     / type:KW_DOUBLE width: decimal_width? unsigned:(__ KW_UNSIGNED)? { return { type: type.toLowerCase(), is_unsigned: Boolean(unsigned), ...width } }
+    / type:KW_JSON { return { type: type.toLowerCase() } }
 
 data_type_width =
     __ KW_LBRACKET __ width:number __ KW_RBRACKET { return width; }
@@ -487,3 +489,4 @@ KW_TEMPTABLE = 'TEMPTABLE'i;
 KW_SQL  = 'SQL'i;
 KW_SECURITY = 'SECURITY'i;
 KW_INVOKER = 'INVOKER'i;
+KW_JSON = 'JSON'i;
